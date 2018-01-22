@@ -790,6 +790,13 @@ function renderObj(Obj,Parent_TF,MY_GBB)
                     var bbMap = [ChildGBB,Obj];
                     GBoundBoxs.push(bbMap);
                 }
+                else if(childobj.nodename == "pg-trend-contour")
+                {
+                    Transform_cur = DrawContourObj(childobj,Parent_TF);
+                    ChildGBB = new BoundingBox();
+                    var bbMap = [ChildGBB,Obj];
+                    GBoundBoxs.push(bbMap);
+                }
                 else if(childobj.nodename == "pg-link")
                 {
                     Activelinkcolor(childobj);
@@ -1854,6 +1861,227 @@ function DrawEllipseObj(obj,Parent_TF,GBoundBoxs)
 	return ctx.getMatrix();
 }
 
+function DrawContourObj(obj,Parent_TF,GBoundBoxs)
+{
+    var bIsGroup =false;
+    var parentOBJ =obj.parentObj;
+    
+    if(parentOBJ.nodename == "g" || parentOBJ.nodename == "use")
+    {bIsGroup =true;}
+    else
+    {bIsGroup =false;}
+    
+    ctx.setMatrix(Parent_TF);
+    SetTransform(obj);
+    SetStyle(obj);
+    
+	ctx.globalAlpha=obj.fill_opacity;
+	
+    if(obj.visibility == false)
+    {
+        return ctx.getMatrix();
+    }
+    ///////////////////////////////////////////////////////////////////
+  
+    var x =obj.x;
+    var y =obj.y;
+    var width = obj.width;
+    var height = obj.height;
+    var x_interval, y_interval;
+	var contourType = obj.contourType;
+	
+	if(contourType == "contour")
+	{
+		x_interval = width/(obj.subdivision_x - 1);
+		y_interval = height/(obj.subdivision_y - 1);
+	}
+	else if(contourType == "contour rect" || obj.contourType == "contour circle")
+	{
+		x_interval = width/obj.subdivision_x;
+		y_interval = height/obj.subdivision_y;
+	}
+	
+	if(contourType == "contour")
+	{
+		ctx.font = obj.value_font_size + "px" + obj.value_font_family;
+		ctx.fillStyle = obj.value_font_color;
+		for(var i = 0; i < obj.subdivision_x-1; i++)	// contour rect
+		{
+			for(var j = 0; j < obj.subdivision_y-1; j++)
+			{
+				var ld_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+				var lu_color = GetColorByValue(obj, obj.data[i][j + 1]).replace("rgb(","").replace(")","").split(",");
+				var rd_color = GetColorByValue(obj, obj.data[i + 1][j]).replace("rgb(","").replace(")","").split(",");
+				var ru_color = GetColorByValue(obj, obj.data[i + 1][j + 1]).replace("rgb(","").replace(")","").split(",");
+				
+				quadGradient(x + (x_interval * i), y + (x_interval * j), x_interval, y_interval, {
+					bottomLeft: [parseFloat(ld_color[0]), parseFloat(ld_color[1]), parseFloat(ld_color[2]), 1],
+					topLeft: [parseFloat(lu_color[0]), parseFloat(lu_color[1]), parseFloat(lu_color[2]), 1],
+					bottomRight: [parseFloat(rd_color[0]), parseFloat(rd_color[1]), parseFloat(rd_color[2]), 1],
+					topRight: [parseFloat(ru_color[0]), parseFloat(ru_color[1]), parseFloat(ru_color[2]), 1]
+					});
+			}
+		}
+		
+		for(var i = 0; i < obj.subdivision_x;i++)
+		{
+			for(var j = 0; j < obj.subdivision_y; j++)
+			{
+				// text draw
+				if(obj.value_visible == "visible")
+				{
+					ctx.fillText(obj.label[i][j], x + (x_interval * i), y + (y_interval * j));
+				}
+				else
+				{
+					var label_interval = y_interval/obj.label_num;
+					for(var k = 0; k < obj.label_num; k++)
+					{
+						ctx.fillText(obj.label[i][j][k], x + (x_interval * i), y + (yinterval * (j + 1) - (label_interval * (k + 1)));
+					}
+				}
+			}
+		}
+		
+		ctx.beginPath();
+		for(var i = 0; i < obj.subdivision_x; i++)	// contour rect
+		{
+			ctx.moveTo(x + (x_interval * i), y);
+			ctx.lineTo(x + (x_interval * i), y + height);
+		}
+		for(var i = 0; i < obj.subdivision_y; i++)
+		{
+			ctx.moveTo(x + width, y + (y_interval * i));
+			ctx.lineTo(x + width, y + (y_interval * i));
+		}
+		ctx.closePath();
+		
+	}
+	else if(contourType == "contour rect" || obj.contourType == "contour circle")
+	{
+		for(var i = 0; i < obj.subdivision_x; i++)	// contour rect
+		{
+			for(var j = 0; j < obj.subdivision_y; j++)
+			{
+				if(contourType == "contour rect")
+				{
+					ctx.beginPath();
+					ctx.rect(x + (x_interval * i),y + (y_interval * j) , x_interval, y_interval);  
+					ctx.fillStyle = GetColorByValue(obj, obj.data[i][j]);;
+					ctx.fill();
+				}
+				else if(contourType == "contour circle")
+				{
+					ctx.beginPath();
+					ctx.ellipse(x + (x_interval * i),y + (y_interval * j), x_interval/2, y_interval/2, 0, 0, 2 * Math.PI, false);
+					ctx.fillStyle = GetColorByValue(obj, obj.data[i][j]);
+					ctx.fill();
+				}
+				// text draw
+				if(obj.value_visible == "visible")
+				{
+					ctx.textAlign = "center";
+					ctx.fillText(obj.label[i][j], x + (x_interval * i) + (x_interval / 2), y + (x_interval * j) + (y_interval / 2));
+				}
+				else
+				{
+					var label_interval = y_interval/obj.label_num;
+					for(var k = 0; k < obj.label_num; k++)
+					{
+						ctx.fillText(obj.label[i][j][k], x + (x_interval * i) + (x_interval / 2), y + (yinterval * (j + 1) - (label_interval * (k + 1)));
+					}
+				}
+			}
+		}
+		ctx.beginPath();
+		for(var i = 0; i <= obj.subdivision_x; i++)	// contour rect
+		{
+			ctx.moveTo(x + (x_interval * i), y);
+			ctx.lineTo(x + (x_interval * i), y + height);
+		}
+		for(var i = 0; i <= obj.subdivision_y; i++)
+		{
+			ctx.moveTo(x + width, y + (y_interval * i));
+			ctx.lineTo(x + width, y + (y_interval * i));
+		}
+		ctx.closePath();
+	}
+	
+    ///////////////////////////////////////////////////////////////////
+    var PW1 = ctx.getCoords(obj.x,obj.y);
+    var PW2 = ctx.getCoords(obj.x+obj.width, obj.y+obj.height);
+    
+    
+    if(PW1.x-PW2.x <1 && PW1.x -PW2.x >-1)
+    {
+        PW1.x =PW1.x -1;
+        PW2.x =PW2.x +1;
+    }
+    if(PW1.y-PW2.y <1 && PW1.y -PW2.y >-1)
+    {
+        PW1.y =PW1.y -1;
+        PW2.y =PW2.y +1;
+    }
+   
+    
+    var bb =new BoundingBox(PW1.x, PW1.y, PW2.x, PW2.y);
+    var map =[bb,obj];
+    
+	SetGrident(bb,obj);
+    ctx.globalAlpha=obj.stroke_opacity;
+    ctx.stroke();
+	
+   if(bIsGroup)
+    {
+       GBoundBoxs.push(map);
+    }
+    else
+    {
+       BoundBoxs.push(map);
+    }
+   
+   return ctx.getMatrix();
+}
+
+function quadGradient(x, y, width, height, corners) 
+{
+	var gradient, startColor, endColor, fac;
+
+	for(var i = 0; i < height; i++)
+	{
+		gradient = ctx.createLinearGradient(x, y + i, width, i);
+		fac = i / (height - 1);
+
+		startColor = arrayToRGBA(lerp(corners.topLeft, corners.bottomLeft, fac));
+		endColor = arrayToRGBA(lerp(corners.topRight, corners.bottomRight, fac));
+
+		gradient.addColorStop(0, startColor);
+		gradient.addColorStop(1, endColor);
+
+		ctx.fillStyle = gradient;
+		ctx.fillRect(x, y + i, width, i);
+	}
+}
+
+function arrayToRGBA(arr)
+{
+	var ret = arr.map(function(v) {
+		// map to [0, 255] and clamp
+		return Math.max(Math.min(Math.round(v * 255), 255), 0);
+	});
+	// alpha should retain its value
+	ret[3] = arr[3];
+
+	return 'rgba(' + ret.join(',') + ')';
+}
+
+function lerp(a, b, fac)
+{
+	return a.map(function(v, i) {
+		return v * (1 - fac) + b[i] * fac;
+	});
+}
+		
 function DrawTextObj(obj,Parent_TF,GBoundBoxs)
 {
     var bIsGroup =false;
