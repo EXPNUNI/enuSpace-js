@@ -215,9 +215,9 @@ function GetColorByValue(obj, fValue)
     var color = split_elevation[0];
 	for(var i = 0; i < icount; i++)
     {
-		if (obj.minElevation + ((i + 1) * rate) >= fValue)
+		if (obj.minElevation + (i * rate) >= fValue)
         {
-            if(obj.minElevation + ((i + 1) * rate) - (rate/2) > fValue)
+            if(obj.minElevation + (i * rate) - (rate/2) > fValue && i > 0)
             {
                 color = split_elevation[i-1];
                 return color;

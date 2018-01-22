@@ -2230,20 +2230,28 @@ function CreateContourObj(nodeobj)
         for(var i = 0; i < obj.subdivision_x; i++)
         {
             obj.data.push(new Array());
+			for(var j = 0; j < obj.subdivision_y; j++)
+			{
+				obj.data[i].push(obj.minElevation);
+			}
         }
     }
 	
 	this.label = new Array();
     init_label(this);
     
-    function init_data(obj)
+    function init_label(obj)
     {
         for(var i = 0; i < obj.subdivision_x; i++)
         {
-			obj.data.push(new Array());
-			for(var j = 0; j <obj.subdivision_y; j++)
+			obj.label.push(new Array());
+			for(var j = 0; j < obj.subdivision_y; j++)
 			{
-				obj.data[i].push(new Array());
+				obj.label[i].push(new Array());
+				for(var k = 0; k < obj.label_num; k++)
+				{
+					obj.label[i][j].push("");
+				}
             }
         }
     }

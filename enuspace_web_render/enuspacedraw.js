@@ -1914,11 +1914,11 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 				var rd_color = GetColorByValue(obj, obj.data[i + 1][j]).replace("rgb(","").replace(")","").split(",");
 				var ru_color = GetColorByValue(obj, obj.data[i + 1][j + 1]).replace("rgb(","").replace(")","").split(",");
 				
-				quadGradient(x + (x_interval * i), y + (x_interval * j), x_interval, y_interval, {
-					bottomLeft: [parseFloat(ld_color[0]), parseFloat(ld_color[1]), parseFloat(ld_color[2]), 1],
-					topLeft: [parseFloat(lu_color[0]), parseFloat(lu_color[1]), parseFloat(lu_color[2]), 1],
-					bottomRight: [parseFloat(rd_color[0]), parseFloat(rd_color[1]), parseFloat(rd_color[2]), 1],
-					topRight: [parseFloat(ru_color[0]), parseFloat(ru_color[1]), parseFloat(ru_color[2]), 1]
+				quadGradient(x + (x_interval * i), (y + height) - (y_interval * j), x_interval, y_interval, {
+					bottomLeft: [parseFloat(ld_color[0])/255, parseFloat(ld_color[1])/255, parseFloat(ld_color[2])/255, 1],
+					topLeft: [parseFloat(lu_color[0])/255, parseFloat(lu_color[1])/255, parseFloat(lu_color[2])/255, 1],
+					bottomRight: [parseFloat(rd_color[0])/255, parseFloat(rd_color[1])/255, parseFloat(rd_color[2])/255, 1],
+					topRight: [parseFloat(ru_color[0])/255, parseFloat(ru_color[1])/255, parseFloat(ru_color[2])/255, 1]
 					});
 			}
 		}
@@ -1930,14 +1930,14 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 				// text draw
 				if(obj.value_visible == "visible")
 				{
-					ctx.fillText(obj.label[i][j], x + (x_interval * i), y + (y_interval * j));
+					canvas_2Ddraw.fillText(obj.data[i][j], x + (x_interval * i), (y + height) - (y_interval * j));
 				}
 				else
 				{
 					var label_interval = y_interval/obj.label_num;
 					for(var k = 0; k < obj.label_num; k++)
 					{
-						ctx.fillText(obj.label[i][j][k], x + (x_interval * i), y + (yinterval * (j + 1) - (label_interval * (k + 1)));
+						canvas_2Ddraw.fillText(obj.label[i][j][k], x + (x_interval * i), (y + height) - (yinterval * (j + 1) + (label_interval * (k + 1))));
 					}
 				}
 			}
@@ -1966,29 +1966,29 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 				if(contourType == "contour rect")
 				{
 					ctx.beginPath();
-					ctx.rect(x + (x_interval * i),y + (y_interval * j) , x_interval, y_interval);  
-					ctx.fillStyle = GetColorByValue(obj, obj.data[i][j]);;
+					ctx.rect(x + (x_interval * i),(y + height) - (y_interval * j) , x_interval, y_interval);  
+					ctx.fillStyle = GetColorByValue(obj, obj.data[i][j] != undefined ? obj.data[i][j] : obj.minElevation);;
 					ctx.fill();
 				}
 				else if(contourType == "contour circle")
 				{
 					ctx.beginPath();
 					ctx.ellipse(x + (x_interval * i),y + (y_interval * j), x_interval/2, y_interval/2, 0, 0, 2 * Math.PI, false);
-					ctx.fillStyle = GetColorByValue(obj, obj.data[i][j]);
+					ctx.fillStyle = GetColorByValue(obj, obj.data[i][j] != undefined ? obj.data[i][j] : obj.minElevation);
 					ctx.fill();
 				}
 				// text draw
 				if(obj.value_visible == "visible")
 				{
-					ctx.textAlign = "center";
-					ctx.fillText(obj.label[i][j], x + (x_interval * i) + (x_interval / 2), y + (x_interval * j) + (y_interval / 2));
+					canvas_2Ddraw.textAlign = "center";
+					canvas_2Ddraw.fillText(obj.data[i][j], x + (x_interval * i) + (x_interval / 2), (y + height) - (y_interval * j) - (y_interval / 2));
 				}
 				else
 				{
 					var label_interval = y_interval/obj.label_num;
 					for(var k = 0; k < obj.label_num; k++)
 					{
-						ctx.fillText(obj.label[i][j][k], x + (x_interval * i) + (x_interval / 2), y + (yinterval * (j + 1) - (label_interval * (k + 1)));
+						canvas_2Ddraw.fillText(obj.label[i][j][k], x + (x_interval * i) + (x_interval / 2), (y + height) - (y_interval * (j + 1) + (label_interval * (k + 1))));
 					}
 				}
 			}
@@ -2049,7 +2049,7 @@ function quadGradient(x, y, width, height, corners)
 
 	for(var i = 0; i < height; i++)
 	{
-		gradient = ctx.createLinearGradient(x, y + i, width, i);
+		gradient = ctx.createLinearGradient(x, (y - height) + i, x + width, (y - height) + i);
 		fac = i / (height - 1);
 
 		startColor = arrayToRGBA(lerp(corners.topLeft, corners.bottomLeft, fac));
@@ -2059,7 +2059,7 @@ function quadGradient(x, y, width, height, corners)
 		gradient.addColorStop(1, endColor);
 
 		ctx.fillStyle = gradient;
-		ctx.fillRect(x, y + i, width, i);
+		ctx.fillRect(x, (y - height) + i, width, 1);
 	}
 }
 
