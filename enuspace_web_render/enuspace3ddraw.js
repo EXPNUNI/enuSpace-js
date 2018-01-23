@@ -207,13 +207,13 @@ function initShaders() {
 function GetColorByValue(obj, fValue)
 {
     var split_elevation = obj.colorElevation.split(";");
-	var icount = split_elevation.length;
+	var icount = split_elevation.length - 1;
 
 	var rate = (obj.maxElevation - obj.minElevation) / icount;
 
 	var i = 0;
     var color = split_elevation[0];
-	for(var i = 0; i < icount; i++)
+	for(var i = 0; i <= icount; i++)
     {
 		if (obj.minElevation + (i * rate) >= fValue)
         {
