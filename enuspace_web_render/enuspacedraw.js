@@ -972,19 +972,19 @@ function SetTextStyle(obj)
 
 function SetStyle(obj)
 {
-    if(obj.fill.indexOf("rgb(") != -1)
-   {
-      ctx.fillStyle = obj.fill;
-   }
-   else if(obj.fill.indexOf("#") != -1 && obj.fill.indexOf("url") == -1)
-   {
-      var r = obj.fill.substring(1,3);
-      var g = obj.fill.substring(3,5);
-      var b = obj.fill.substring(5,7);
-      
-      var fill_text = "rgb("+ parseInt(r, 16) + "," + parseInt(g, 16) + "," + parseInt(b, 16) + ")";
-      ctx.fillStyle = fill_text;
-   }
+	if(obj.fill.indexOf("rgb(") != -1)
+	{
+		ctx.fillStyle = obj.fill;
+	}
+	else if(obj.fill.indexOf("#") != -1 && obj.fill.indexOf("url") == -1)
+	{
+		var r = obj.fill.substring(1,3);
+		var g = obj.fill.substring(3,5);
+		var b = obj.fill.substring(5,7);
+
+		var fill_text = "rgb("+ parseInt(r, 16) + "," + parseInt(g, 16) + "," + parseInt(b, 16) + ")";
+		ctx.fillStyle = fill_text;
+	}
     ctx.strokeStyle = obj.stroke;
     
     if(obj.stroke_width !='undefined')
@@ -1873,22 +1873,56 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
     
     ctx.setMatrix(Parent_TF);
     SetTransform(obj);
-    SetStyle(obj);
     
-	ctx.globalAlpha=obj.fill_opacity;
-	
     if(obj.visibility == false)
     {
         return ctx.getMatrix();
     }
     ///////////////////////////////////////////////////////////////////
-  
     var x =obj.x;
     var y =obj.y;
     var width = obj.width;
     var height = obj.height;
     var x_interval, y_interval;
 	var contourType = obj.contourType;
+	
+	if(obj.fill.indexOf("rgb(") != -1)
+	{
+		ctx.fillStyle = obj.fill;
+	}
+	else if(obj.fill.indexOf("#") != -1 && obj.fill.indexOf("url") == -1)
+	{
+		var r = obj.fill.substring(1,3);
+		var g = obj.fill.substring(3,5);
+		var b = obj.fill.substring(5,7);
+
+		var fill_text = "rgb("+ parseInt(r, 16) + "," + parseInt(g, 16) + "," + parseInt(b, 16) + ")";
+		ctx.fillStyle = fill_text;
+	}
+	ctx.beginPath();
+	ctx.moveTo(x, y);
+	ctx.lineTo(x + width, y);
+	ctx.lineTo(x + width, y + height);
+	ctx.lineTo(x, y + height);
+	ctx.closePath();
+	ctx.fillStyle = obj.fill;
+	ctx.globalAlpha=obj.fill_opacity;
+	ctx.fill();
+	
+	///////////////////////////////////////////////////////////////////
+	// grid stroke property
+	ctx.strokeStyle = obj.gird_stroke;
+    if(obj.grid_stroke_width !='undefined')
+    {
+        ctx.lineWidth = obj.grid_stroke_width;
+    }
+   else
+    {
+        ctx.lineWidth = 1;
+    }
+    var empty_dash = [];
+    ctx.setLineDash(empty_dash);
+    ctx.globalAlpha = 1;
 	
 	if(contourType == "contour")
 	{
@@ -1903,8 +1937,6 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 	
 	if(contourType == "contour")
 	{
-		ctx.font = obj.value_font_size + "px" + obj.value_font_family;
-		ctx.fillStyle = obj.value_font_color;
 		for(var i = 0; i < obj.subdivision_x-1; i++)	// contour rect
 		{
 			for(var j = 0; j < obj.subdivision_y-1; j++)
@@ -1923,6 +1955,8 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 			}
 		}
 		
+		canvas_2Ddraw.font = obj.value_font_size + "px" + obj.value_font_family;
+		canvas_2Ddraw.fillStyle = obj.value_font_color;
 		for(var i = 0; i < obj.subdivision_x;i++)
 		{
 			for(var j = 0; j < obj.subdivision_y; j++)
@@ -1930,7 +1964,14 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 				// text draw
 				if(obj.value_visible == "visible")
 				{
-					canvas_2Ddraw.fillText(obj.data[i][j], x + (x_interval * i), (y + height) - (y_interval * j));
+					if(obj.value_format == "engineering unit")
+					{
+						canvas_2Ddraw.fillText(obj.data[i][j].toExponential(), x + (x_interval * i) + 1, (y + height) - (y_interval * j) - 2);
+					}
+					else
+					{
+						canvas_2Ddraw.fillText(obj.data[i][j], x + (x_interval * i) + 1, (y + height) - (y_interval * j) - 2);
+					}
 				}
 				else
 				{
@@ -1943,19 +1984,40 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 			}
 		}
 		
-		ctx.beginPath();
-		for(var i = 0; i < obj.subdivision_x; i++)	// contour rect
+		if(obj.grid_visible == "visible")
 		{
-			ctx.moveTo(x + (x_interval * i), y);
-			ctx.lineTo(x + (x_interval * i), y + height);
+			ctx.beginPath();
+			ctx.strokeStyle = obj.grid_stroke;
+			ctx.globalAlpha = obj.grid_stroke_opacity;
+			for(var i = 0; i < obj.subdivision_x; i++)	// contour rect
+			{
+				ctx.moveTo(x + (x_interval * i), y);
+				ctx.lineTo(x + (x_interval * i), y + height);
+			}
+			for(var i = 0; i < obj.subdivision_y; i++)
+			{
+				ctx.moveTo(x, y + (y_interval * i));
+				ctx.lineTo(x + width, y + (y_interval * i));
+			}
+			ctx.closePath();
+			ctx.stroke();
 		}
-		for(var i = 0; i < obj.subdivision_y; i++)
-		{
-			ctx.moveTo(x + width, y + (y_interval * i));
-			ctx.lineTo(x + width, y + (y_interval * i));
-		}
-		ctx.closePath();
 		
+		canvas_2Ddraw.font = obj.xaxis_font_size + "px" + obj.xaxis_font_family;
+		canvas_2Ddraw.fillStyle = obj.xaxis_font_color;
+		for(var i = 0; i < obj.subdivision_x - 1; i++)
+		{
+			canvas_2Ddraw.textAlign = "center";
+			canvas_2Ddraw.fillText(i + 1, x + (x_interval * i) + (x_interval/2), y + height + 20);
+		}
+		
+		canvas_2Ddraw.font = obj.yaxis_font_size + "px" + obj.yaxis_font_family;
+		canvas_2Ddraw.fillStyle = obj.yaxis_font_color;
+		for(var i = 0; i < obj.subdivision_y - 1; i++)
+		{
+			canvas_2Ddraw.textAlign = "end";
+			canvas_2Ddraw.fillText(i + 1, x - 10 , y + height - (y_interval * i) - (y_interval/2));
+		}
 	}
 	else if(contourType == "contour rect" || obj.contourType == "contour circle")
 	{
@@ -1966,22 +2028,33 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 				if(contourType == "contour rect")
 				{
 					ctx.beginPath();
-					ctx.rect(x + (x_interval * i),(y + height) - (y_interval * j) , x_interval, y_interval);  
+					ctx.rect(x + (x_interval * i),(y + height) - (y_interval * (j + 1)) , x_interval, y_interval);
+					ctx.closePath();
 					ctx.fillStyle = GetColorByValue(obj, obj.data[i][j] != undefined ? obj.data[i][j] : obj.minElevation);;
 					ctx.fill();
 				}
 				else if(contourType == "contour circle")
 				{
 					ctx.beginPath();
-					ctx.ellipse(x + (x_interval * i),y + (y_interval * j), x_interval/2, y_interval/2, 0, 0, 2 * Math.PI, false);
+					canvas_2Ddraw.ellipse(x + (x_interval * i) + (x_interval/2),(y + height) - (y_interval * j) - (y_interval/2), x_interval/2, y_interval/2, 0, 0, 2 * Math.PI, false);
+					ctx.closePath();
 					ctx.fillStyle = GetColorByValue(obj, obj.data[i][j] != undefined ? obj.data[i][j] : obj.minElevation);
 					ctx.fill();
 				}
 				// text draw
+				canvas_2Ddraw.font = obj.value_font_size + "px" + obj.value_font_family;
+				canvas_2Ddraw.fillStyle = obj.value_font_color;
+				canvas_2Ddraw.textAlign = "center";
 				if(obj.value_visible == "visible")
 				{
-					canvas_2Ddraw.textAlign = "center";
-					canvas_2Ddraw.fillText(obj.data[i][j], x + (x_interval * i) + (x_interval / 2), (y + height) - (y_interval * j) - (y_interval / 2));
+					if(obj.value_format == "engineering unit")
+					{
+						canvas_2Ddraw.fillText(obj.data[i][j].toExponential(), x + (x_interval * i) + (x_interval / 2), (y + height) - (y_interval * j) - (y_interval / 2));
+					}
+					else
+					{
+						canvas_2Ddraw.fillText(obj.data[i][j], x + (x_interval * i) + (x_interval / 2), (y + height) - (y_interval * j) - (y_interval / 2));
+					}
 				}
 				else
 				{
@@ -1993,20 +2066,52 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 				}
 			}
 		}
-		ctx.beginPath();
-		for(var i = 0; i <= obj.subdivision_x; i++)	// contour rect
+		
+		if(obj.grid_visible == "visible")
 		{
-			ctx.moveTo(x + (x_interval * i), y);
-			ctx.lineTo(x + (x_interval * i), y + height);
+			ctx.beginPath();
+			ctx.strokeStyle = obj.grid_stroke;
+			ctx.globalAlpha = obj.grid_stroke_opacity;
+			for(var i = 0; i <= obj.subdivision_x; i++)	// contour rect
+			{
+				ctx.moveTo(x + (x_interval * i), y);
+				ctx.lineTo(x + (x_interval * i), y + height);
+			}
+			for(var i = 0; i <= obj.subdivision_y; i++)
+			{
+				ctx.moveTo(x, y + (y_interval * i));
+				ctx.lineTo(x + width, y + (y_interval * i));
+			}
+			ctx.closePath();
+			ctx.stroke();
 		}
-		for(var i = 0; i <= obj.subdivision_y; i++)
+		
+		canvas_2Ddraw.font = obj.xaxis_font_size + "px" + obj.xaxis_font_family;
+		canvas_2Ddraw.fillStyle = obj.xaxis_font_color;
+		for(var i = 0; i < obj.subdivision_x; i++)
 		{
-			ctx.moveTo(x + width, y + (y_interval * i));
-			ctx.lineTo(x + width, y + (y_interval * i));
+			canvas_2Ddraw.textAlign = "center";
+			canvas_2Ddraw.fillText(i + 1, x + (x_interval * i) + (x_interval/2), y + height + 20);
 		}
-		ctx.closePath();
+		
+		canvas_2Ddraw.font = obj.yaxis_font_size + "px" + obj.yaxis_font_family;
+		canvas_2Ddraw.fillStyle = obj.yaxis_font_color;
+		for(var i = 0; i < obj.subdivision_y; i++)
+		{
+			canvas_2Ddraw.textAlign = "end";
+			canvas_2Ddraw.fillText(i + 1, x - 10 , y + height - (y_interval * i) - (y_interval/2));
+		}
 	}
 	
+    SetStyle(obj);
+	
+	ctx.beginPath();
+	ctx.moveTo(x, y);
+	ctx.lineTo(x + width, y);
+	ctx.lineTo(x + width, y + height);
+	ctx.lineTo(x, y + height);
+	ctx.closePath();
+		
     ///////////////////////////////////////////////////////////////////
     var PW1 = ctx.getCoords(obj.x,obj.y);
     var PW2 = ctx.getCoords(obj.x+obj.width, obj.y+obj.height);
@@ -2028,6 +2133,7 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
     var map =[bb,obj];
     
 	SetGrident(bb,obj);
+		
     ctx.globalAlpha=obj.stroke_opacity;
     ctx.stroke();
 	
@@ -2059,7 +2165,14 @@ function quadGradient(x, y, width, height, corners)
 		gradient.addColorStop(1, endColor);
 
 		ctx.fillStyle = gradient;
-		ctx.fillRect(x, (y - height) + i, width, 1);
+		if(i < (height - 1))
+		{
+			ctx.fillRect(x, (y - height) + i, width, 2);
+		}
+		else if((height - 1) <= i && i < height)
+		{
+			ctx.fillRect(x, (y - height) + i, width, 1);
+		}
 	}
 }
 
