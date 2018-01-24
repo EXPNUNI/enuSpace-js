@@ -1909,6 +1909,13 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 	ctx.globalAlpha=obj.fill_opacity;
 	ctx.fill();
 	
+	if(obj.subdivision_x <= 0 || obj.subdivision_y <= 0)
+	{
+		canvas_2Ddraw.font = obj.value_font_size + "px" + obj.value_font_family;
+		canvas_2Ddraw.fillStyle = obj.value_font_color;
+		canvas_2Ddraw.textAlign = "center";
+		canvas_2Ddraw.fillText("subdivision can not be zero", x + (width/2), y + (height/2));
+	}
 	///////////////////////////////////////////////////////////////////
 	// grid stroke property
 	ctx.strokeStyle = obj.gird_stroke;
@@ -1926,8 +1933,26 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 	
 	if(contourType == "contour")
 	{
-		x_interval = width/(obj.subdivision_x - 1);
-		y_interval = height/(obj.subdivision_y - 1);
+		if(obj.subdivision_x == 1 && obj.subdivision_y == 1)
+		{
+			x_interval = width/obj.subdivision_x;
+			y_interval = height/obj.subdivision_y;
+		}
+		else if(obj.subdivision_x > 1 && obj.subdivision_y == 1)
+		{
+			x_interval = width/(obj.subdivision_x - 1);
+			y_interval = height/obj.subdivision_y;
+		}
+		else if(obj.subdivision_x == 1 && obj.subdivision_y > 1)
+		{
+			x_interval = width/obj.subdivision_x;
+			y_interval = height/(obj.subdivision_y - 1);
+		}
+		else
+		{
+			x_interval = width/(obj.subdivision_x - 1);
+			y_interval = height/(obj.subdivision_y - 1);
+		}
 	}
 	else if(contourType == "contour rect" || obj.contourType == "contour circle")
 	{
@@ -1937,21 +1962,84 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 	
 	if(contourType == "contour")
 	{
-		for(var i = 0; i < obj.subdivision_x-1; i++)	// contour rect
+		if(obj.subdivision_x == 1 && obj.subdivision_y == 1)
 		{
-			for(var j = 0; j < obj.subdivision_y-1; j++)
+			for(var i = 0; i < obj.subdivision_x; i++)	// contour
 			{
-				var ld_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
-				var lu_color = GetColorByValue(obj, obj.data[i][j + 1]).replace("rgb(","").replace(")","").split(",");
-				var rd_color = GetColorByValue(obj, obj.data[i + 1][j]).replace("rgb(","").replace(")","").split(",");
-				var ru_color = GetColorByValue(obj, obj.data[i + 1][j + 1]).replace("rgb(","").replace(")","").split(",");
-				
-				quadGradient(x + (x_interval * i), (y + height) - (y_interval * j), x_interval, y_interval, {
-					bottomLeft: [parseFloat(ld_color[0])/255, parseFloat(ld_color[1])/255, parseFloat(ld_color[2])/255, 1],
-					topLeft: [parseFloat(lu_color[0])/255, parseFloat(lu_color[1])/255, parseFloat(lu_color[2])/255, 1],
-					bottomRight: [parseFloat(rd_color[0])/255, parseFloat(rd_color[1])/255, parseFloat(rd_color[2])/255, 1],
-					topRight: [parseFloat(ru_color[0])/255, parseFloat(ru_color[1])/255, parseFloat(ru_color[2])/255, 1]
-					});
+				for(var j = 0; j < obj.subdivision_y; j++)
+				{
+					var ld_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+					var lu_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+					var rd_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+					var ru_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+					
+					quadGradient(x + (x_interval * i), (y + height) - (y_interval * j), x_interval, y_interval, {
+						bottomLeft: [parseFloat(ld_color[0])/255, parseFloat(ld_color[1])/255, parseFloat(ld_color[2])/255, 1],
+						topLeft: [parseFloat(lu_color[0])/255, parseFloat(lu_color[1])/255, parseFloat(lu_color[2])/255, 1],
+						bottomRight: [parseFloat(rd_color[0])/255, parseFloat(rd_color[1])/255, parseFloat(rd_color[2])/255, 1],
+						topRight: [parseFloat(ru_color[0])/255, parseFloat(ru_color[1])/255, parseFloat(ru_color[2])/255, 1]
+						});
+				}
+			}
+		}
+		else if(obj.subdivision_x == 1 && obj.subdivision_y > 1)
+		{
+			for(var i = 0; i < obj.subdivision_x; i++)	// contour
+			{
+				for(var j = 0; j < obj.subdivision_y-1; j++)
+				{
+					var ld_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+					var lu_color = GetColorByValue(obj, obj.data[i][j + 1]).replace("rgb(","").replace(")","").split(",");
+					var rd_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+					var ru_color = GetColorByValue(obj, obj.data[i][j + 1]).replace("rgb(","").replace(")","").split(",");
+					
+					quadGradient(x + (x_interval * i), (y + height) - (y_interval * j), x_interval, y_interval, {
+						bottomLeft: [parseFloat(ld_color[0])/255, parseFloat(ld_color[1])/255, parseFloat(ld_color[2])/255, 1],
+						topLeft: [parseFloat(lu_color[0])/255, parseFloat(lu_color[1])/255, parseFloat(lu_color[2])/255, 1],
+						bottomRight: [parseFloat(rd_color[0])/255, parseFloat(rd_color[1])/255, parseFloat(rd_color[2])/255, 1],
+						topRight: [parseFloat(ru_color[0])/255, parseFloat(ru_color[1])/255, parseFloat(ru_color[2])/255, 1]
+						});
+				}
+			}
+		}
+		else if(obj.subdivision_x > 1 && obj.subdivision_y == 1)
+		{
+			for(var i = 0; i < obj.subdivision_x-1; i++)	// contour
+			{
+				for(var j = 0; j < obj.subdivision_y; j++)
+				{
+					var ld_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+					var lu_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+					var rd_color = GetColorByValue(obj, obj.data[i + 1][j]).replace("rgb(","").replace(")","").split(",");
+					var ru_color = GetColorByValue(obj, obj.data[i + 1][j]).replace("rgb(","").replace(")","").split(",");
+					
+					quadGradient(x + (x_interval * i), (y + height) - (y_interval * j), x_interval, y_interval, {
+						bottomLeft: [parseFloat(ld_color[0])/255, parseFloat(ld_color[1])/255, parseFloat(ld_color[2])/255, 1],
+						topLeft: [parseFloat(lu_color[0])/255, parseFloat(lu_color[1])/255, parseFloat(lu_color[2])/255, 1],
+						bottomRight: [parseFloat(rd_color[0])/255, parseFloat(rd_color[1])/255, parseFloat(rd_color[2])/255, 1],
+						topRight: [parseFloat(ru_color[0])/255, parseFloat(ru_color[1])/255, parseFloat(ru_color[2])/255, 1]
+						});
+				}
+			}
+		}
+		else
+		{
+			for(var i = 0; i < obj.subdivision_x-1; i++)	// contour
+			{
+				for(var j = 0; j < obj.subdivision_y-1; j++)
+				{
+					var ld_color = GetColorByValue(obj, obj.data[i][j]).replace("rgb(","").replace(")","").split(",");
+					var lu_color = GetColorByValue(obj, obj.data[i][j + 1]).replace("rgb(","").replace(")","").split(",");
+					var rd_color = GetColorByValue(obj, obj.data[i + 1][j]).replace("rgb(","").replace(")","").split(",");
+					var ru_color = GetColorByValue(obj, obj.data[i + 1][j + 1]).replace("rgb(","").replace(")","").split(",");
+					
+					quadGradient(x + (x_interval * i), (y + height) - (y_interval * j), x_interval, y_interval, {
+						bottomLeft: [parseFloat(ld_color[0])/255, parseFloat(ld_color[1])/255, parseFloat(ld_color[2])/255, 1],
+						topLeft: [parseFloat(lu_color[0])/255, parseFloat(lu_color[1])/255, parseFloat(lu_color[2])/255, 1],
+						bottomRight: [parseFloat(rd_color[0])/255, parseFloat(rd_color[1])/255, parseFloat(rd_color[2])/255, 1],
+						topRight: [parseFloat(ru_color[0])/255, parseFloat(ru_color[1])/255, parseFloat(ru_color[2])/255, 1]
+						});
+				}
 			}
 		}
 		
@@ -1989,12 +2077,12 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 			ctx.beginPath();
 			ctx.strokeStyle = obj.grid_stroke;
 			ctx.globalAlpha = obj.grid_stroke_opacity;
-			for(var i = 0; i < obj.subdivision_x; i++)	// contour rect
+			for(var i = 1; i < obj.subdivision_x - 1; i++)	// contour rect
 			{
 				ctx.moveTo(x + (x_interval * i), y);
 				ctx.lineTo(x + (x_interval * i), y + height);
 			}
-			for(var i = 0; i < obj.subdivision_y; i++)
+			for(var i = 1; i < obj.subdivision_y - 1; i++)
 			{
 				ctx.moveTo(x, y + (y_interval * i));
 				ctx.lineTo(x + width, y + (y_interval * i));
@@ -2005,18 +2093,40 @@ function DrawContourObj(obj,Parent_TF,GBoundBoxs)
 		
 		canvas_2Ddraw.font = obj.xaxis_font_size + "px" + obj.xaxis_font_family;
 		canvas_2Ddraw.fillStyle = obj.xaxis_font_color;
-		for(var i = 0; i < obj.subdivision_x - 1; i++)
+		if(obj.subdivision_x == 1)
 		{
-			canvas_2Ddraw.textAlign = "center";
-			canvas_2Ddraw.fillText(i + 1, x + (x_interval * i) + (x_interval/2), y + height + 20);
+			for(var i = 0; i < obj.subdivision_x; i++)
+			{
+				canvas_2Ddraw.textAlign = "center";
+				canvas_2Ddraw.fillText(i + 1, x + (x_interval * i) + (x_interval/2), y + height + 20);
+			}
 		}
-		
+		else
+		{
+			for(var i = 0; i < obj.subdivision_x - 1; i++)
+			{
+				canvas_2Ddraw.textAlign = "center";
+				canvas_2Ddraw.fillText(i + 1, x + (x_interval * i) + (x_interval/2), y + height + 20);
+			}
+		}
+				
 		canvas_2Ddraw.font = obj.yaxis_font_size + "px" + obj.yaxis_font_family;
 		canvas_2Ddraw.fillStyle = obj.yaxis_font_color;
-		for(var i = 0; i < obj.subdivision_y - 1; i++)
+		if(obj.subdivision_y == 1)
 		{
-			canvas_2Ddraw.textAlign = "end";
-			canvas_2Ddraw.fillText(i + 1, x - 10 , y + height - (y_interval * i) - (y_interval/2));
+			for(var i = 0; i < obj.subdivision_y; i++)
+			{
+				canvas_2Ddraw.textAlign = "end";
+				canvas_2Ddraw.fillText(i + 1, x - 10 , y + height - (y_interval * i) - (y_interval/2));
+			}
+		}
+		else
+		{
+			for(var i = 0; i < obj.subdivision_y - 1; i++)
+			{
+				canvas_2Ddraw.textAlign = "end";
+				canvas_2Ddraw.fillText(i + 1, x - 10 , y + height - (y_interval * i) - (y_interval/2));
+			}
 		}
 	}
 	else if(contourType == "contour rect" || obj.contourType == "contour circle")

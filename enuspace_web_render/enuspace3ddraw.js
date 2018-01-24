@@ -171,7 +171,7 @@ function initDraw(rootobj) {
 function initShaders() {
     
     var frag_str = "precision mediump float;varying vec4 vColor;void main(void){ gl_FragColor = vColor;}"
-    var vertex_str = "attribute vec3 aVertexPosition;attribute vec4 aVertexColor;uniform mat4 uMVMatrix;uniform mat4 uPMatrix;varying vec4 vColor; void main(void) { gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0); vColor = aVertexColor;}"
+    var vertex_str = "attribute vec3 aVertexPosition;attribute vec4 aVertexColor;uniform mat4 uMVMatrix;uniform mat4 uPMatrix;uniform mat4 u_xformMatrix;varying vec4 vColor; void main(void) { gl_Position = uPMatrix * uMVMatrix * u_xformMatrix * vec4(aVertexPosition, 1.0); vColor = aVertexColor;}"
     
     var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     var vertexShader = gl.createShader(gl.VERTEX_SHADER);
@@ -280,7 +280,7 @@ function drawScene(parentobj) {
                 }
                 else if(child.nodename == "IndexedFaceSet")
                 {
-                    //DrawIndexedFaceSet(child);
+                    DrawIndexedFaceSet(child);
                 }
                 else if(child.nodename == "Terrain")
                 {
@@ -396,6 +396,16 @@ function DrawBox(obj) {
     mat4.rotate(mvMatrix, degToRad(obj.rotation_z), [0, 0, 1]);
     mat4.translate(mvMatrix, [obj.center_x, obj.center_y, obj.center_z]);
     
+	var xformMatrix = new Float32Array([
+		obj.scale_x,   0.0,  0.0,  0.0,
+		0.0,  obj.scale_y,   0.0,  0.0,
+		0.0,  0.0,  obj.scale_z,   0.0,
+		0.0,  0.0,  0.0,  1.0  
+	]);
+
+	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
+	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+	
     //vertex버퍼 바인드
     gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -468,6 +478,16 @@ function DrawCone(obj) {
     mat4.rotate(mvMatrix, degToRad(obj.rotation_z), [0, 0, 1]);
     mat4.translate(mvMatrix, [obj.center_x, obj.center_y, obj.center_z]);
 
+	var xformMatrix = new Float32Array([
+		obj.scale_x,   0.0,  0.0,  0.0,
+		0.0,  obj.scale_y,   0.0,  0.0,
+		0.0,  0.0,  obj.scale_z,   0.0,
+		0.0,  0.0,  0.0,  1.0  
+	]);
+
+	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
+	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+	
     //vertex버퍼 바인드
     gl.bindBuffer(gl.ARRAY_BUFFER, coneVertexBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, coneVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -565,6 +585,16 @@ function DrawSphere(obj) {
     mat4.rotate(mvMatrix, degToRad(obj.rotation_z), [0, 0, 1]);
     mat4.translate(mvMatrix, [obj.center_x, obj.center_y, obj.center_z]);
     
+	var xformMatrix = new Float32Array([
+		obj.scale_x,   0.0,  0.0,  0.0,
+		0.0,  obj.scale_y,   0.0,  0.0,
+		0.0,  0.0,  obj.scale_z,   0.0,
+		0.0,  0.0,  0.0,  1.0  
+	]);
+
+	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
+	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+	
     //vertex버퍼 바인드
     gl.bindBuffer(gl.ARRAY_BUFFER, SphereVertexPositionBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, SphereVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -670,6 +700,16 @@ function DrawCylinder(obj) {
     mat4.rotate(mvMatrix, degToRad(obj.rotation_z), [0, 0, 1]);
     mat4.translate(mvMatrix, [obj.center_x, obj.center_y, obj.center_z]);
 
+	var xformMatrix = new Float32Array([
+		obj.scale_x,   0.0,  0.0,  0.0,
+		0.0,  obj.scale_y,   0.0,  0.0,
+		0.0,  0.0,  obj.scale_z,   0.0,
+		0.0,  0.0,  0.0,  1.0  
+	]);
+
+	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
+	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+	
     //실린더 top 버퍼
     if(obj.top === "true")
     {
@@ -714,12 +754,72 @@ function DrawCylinder(obj) {
     mvPopMatrix();
 }
 
+function DrawIndexedFaceSet(obj) {
+    //The following code snippet creates a vertex buffer and binds data to it
+    var point = obj.point;
+    FaceSetVertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, FaceSetVertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(point), gl.STATIC_DRAW);
+    FaceSetVertexBuffer.itemSize = 3;
+    FaceSetVertexBuffer.numItems = point.length/3;
+    
+    var colors = [];
+    for(var i = 0; i < FaceSetVertexBuffer.numItems; i++)
+    {
+        colors.push(parseFloat(obj.diffuseColor[0]), parseFloat(obj.diffuseColor[1]), parseFloat(obj.diffuseColor[2]), 1.0);
+    }
+    FaceSetVertexColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, FaceSetVertexColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+    FaceSetVertexColorBuffer.itemSize = 4;
+    FaceSetVertexColorBuffer.numItems = colors.length/4;
+	
+	FaceSetIndexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, FaceSetIndexBuffer);
+    var FaceSetIndices = obj.coordindex;
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(FaceSetIndices), gl.STATIC_DRAW);
+    FaceSetIndexBuffer.itemSize = 1;
+    FaceSetIndexBuffer.numItems = FaceSetIndices.length;
+    
+    //draw 시작
+    mvPushMatrix();
+    mat4.translate(mvMatrix, [obj.translation_x, obj.translation_y, obj.translation_z]);
+	mat4.scale(obj.scale_x,obj.scale_y,obj.scale_z);
+    mat4.rotate(mvMatrix, degToRad(obj.rotation_x), [1, 0, 0]);
+    mat4.rotate(mvMatrix, degToRad(obj.rotation_y), [0, 1, 0]);
+    mat4.rotate(mvMatrix, degToRad(obj.rotation_z), [0, 0, 1]);
+    mat4.translate(mvMatrix, [obj.center_x, obj.center_y, obj.center_z]);
+	
+	var xformMatrix = new Float32Array([
+		obj.scale_x,   0.0,  0.0,  0.0,
+		0.0,  obj.scale_y,   0.0,  0.0,
+		0.0,  0.0,  obj.scale_z,   0.0,
+		0.0,  0.0,  0.0,  1.0  
+	]);
+
+	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
+	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+    
+    //gl.lineWidth(2);
+    //vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, FaceSetVertexBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, FaceSetVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //색상 vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, FaceSetVertexColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, FaceSetVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //인덱스 버퍼 바인드
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, FaceSetIndexBuffer);
+    setMatrixUniforms();
+    gl.drawElements(gl.TRIANGLES, FaceSetIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+    mvPopMatrix();
+}
+
 function DrawLineSet(obj) {
     //The following code snippet creates a vertex buffer and binds data to it
     var point = [];
     for(var i = 0; i < obj.point.length; i+=3)
     {
-        point.push(parseFloat(obj.point[i])*obj.scale_x,parseFloat(obj.point[i+1])*obj.scale_y,parseFloat(obj.point[i+2])*obj.scale_z);
+        point.push(parseFloat(obj.point[i]),parseFloat(obj.point[i+1]),parseFloat(obj.point[i+2]));
     }
     lineVertexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, lineVertexBuffer);
@@ -746,6 +846,16 @@ function DrawLineSet(obj) {
     mat4.rotate(mvMatrix, degToRad(obj.rotation_z), [0, 0, 1]);
     mat4.translate(mvMatrix, [obj.center_x, obj.center_y, obj.center_z]);
     
+	var xformMatrix = new Float32Array([
+		obj.scale_x,   0.0,  0.0,  0.0,
+		0.0,  obj.scale_y,   0.0,  0.0,
+		0.0,  0.0,  obj.scale_z,   0.0,
+		0.0,  0.0,  0.0,  1.0  
+	]);
+
+	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
+	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+	
     //gl.lineWidth(2);
     //vertex버퍼 바인드
     gl.bindBuffer(gl.ARRAY_BUFFER, lineVertexBuffer);
@@ -816,6 +926,16 @@ function DrawTerrain(obj)
     mat4.rotate(mvMatrix, degToRad(obj.rotation_z), [0, 0, 1]);
     mat4.translate(mvMatrix, [obj.center_x, obj.center_y, obj.center_z]);
     
+	var xformMatrix = new Float32Array([
+		obj.scale_x,   0.0,  0.0,  0.0,
+		0.0,  obj.scale_y,   0.0,  0.0,
+		0.0,  0.0,  obj.scale_z,   0.0,
+		0.0,  0.0,  0.0,  1.0  
+	]);
+
+	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
+	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+	
     //vertex버퍼 바인드
     gl.bindBuffer(gl.ARRAY_BUFFER, TerrainVertexBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, TerrainVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -916,6 +1036,16 @@ function Draw3DContour(obj)
     mat4.rotate(mvMatrix, degToRad(obj.rotation_z), [0, 0, 1]);
     mat4.translate(mvMatrix, [obj.center_x, obj.center_y, obj.center_z]);
     
+	var xformMatrix = new Float32Array([
+		obj.scale_x,   0.0,  0.0,  0.0,
+		0.0,  obj.scale_y,   0.0,  0.0,
+		0.0,  0.0,  obj.scale_z,   0.0,
+		0.0,  0.0,  0.0,  1.0  
+	]);
+
+	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
+	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+	
     //vertex버퍼 바인드
     gl.bindBuffer(gl.ARRAY_BUFFER, ContourVertexBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, ContourVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);

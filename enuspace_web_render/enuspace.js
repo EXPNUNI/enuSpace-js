@@ -3567,8 +3567,61 @@ function Create3DIndexedFaceSetObj(nodeobj)
     this.shininess = parseFloat(materialinfo.getAttribute("shininess"));
     this.transparency = parseFloat(materialinfo.getAttribute("transparency"));
     
-    var coordinateobj = nodeobj.firstElementChild;
-    this.point = parseFloat(coordinateobj.getAttribute("point"));
+	this.str_coordindex = nodeobj.getAttribute("coordIndex");
+	this.coordindex = new Array();
+	coordindex_init(this);
+		
+	function coordindex_init(obj)
+	{
+		var coord_split = obj.str_coordindex.split("-1");
+		for(var i = 0; i < coord_split.length; i++)
+		{
+			var temp = coord_split[i].split(" ");
+			for(var j = 0; j < temp.length; j++)
+			{
+				if(temp[j] != "")
+				{
+					obj.coordindex.push(parseFloat(temp[j]));
+				}
+			}
+		}
+	}
+	
+    this.str_coordinate_split = nodeobj.firstElementChild.getAttribute("point").split(" ");
+    this.point = new Array();
+	coordinate_init(this);
+	
+	function coordinate_init(obj)
+	{
+		for(var i = 0; i < obj.str_coordinate_split.length; i++)
+		{
+			obj.point.push(parseFloat(obj.str_coordinate_split[i]));
+		}
+	}
+	
+	var child = nodeobj.parentElement.firstElementChild;
+    while(child)
+    {
+        if(child.nodeName == "script")
+        {
+            if(current_browser == "ie")
+            {
+                CreateFunction(child.text,this);
+            }
+            else
+            {
+                CreateFunction(child.textContent,this);
+            }
+        }
+        if(child.nextElementSibling)
+        {
+            child = child.nextElementSibling;
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 function Create3DTerrainObj(nodeobj)
