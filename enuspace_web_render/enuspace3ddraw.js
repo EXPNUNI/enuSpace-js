@@ -14,6 +14,9 @@ var mvMatrixStack = [];
 var pMatrix = mat4.create();
 var root_obj_3d = null;
 
+//animation frame id
+var animationframe_id = null;
+
 function struct_3d_size(x, y, z)
 {
     if(x || y || z)
@@ -81,7 +84,6 @@ function handlemousewheel(e){
 }
 
 function draw_3d() {
-    window.requestAnimationFrame(draw_3d);
     drawScene(root_obj_3d);
 //    renderer.render( scene, camera );
 //    animate();
@@ -102,8 +104,12 @@ function initGL(canvas) {
 }
 
 function initDraw(rootobj) {
-    var canvas = document.getElementById("ID_CANVAS");
-    initGL(canvas);
+    var canvas3d = document.getElementById("ID_CANVAS_3D");
+	if(canvas3d.getAttribute("hidden") != null)
+	{
+		canvas3d.removeAttribute("hidden");
+	}
+    initGL(canvas3d);
     camera = new THREE.PerspectiveCamera(75, gl.viewportWidth / gl.viewportHeight, 0.1, 10000.0);
     camera.position.y = 10;
     camera.position.z = 1000;
@@ -150,22 +156,23 @@ function initDraw(rootobj) {
     camera_distance = 1000; // default
     gl.disable(gl.CULL_FACE);
     
-    gl.canvas.onmousedown = handleMouseDown;
+    canvas3d.addEventListener("mousedown",handleMouseDown,false);
+    canvas3d.addEventListener("mouseup",handleMouseUp,false);
+    canvas3d.addEventListener("mousemove",handleMouseMove,false);
     mousewheelevt=(/Firefox/i.test(navigator.userAgent))? "DOMMouseScroll" : "mousewheel"
         
     if (canvas.attachEvent) //if IE (and Opera depending on user setting)
     {
-        document.attachEvent("on"+mousewheelevt, handlemousewheel);
+        canvas3d.attachEvent("on"+mousewheelevt, handlemousewheel);
     }
     else if (canvas.addEventListener) //WC3 browsers
     {
-        document.onmousewheel = handlemousewheel;
+        canvas3d.addEventListener(mousewheelevt,handlemousewheel,false);
     }
     
-    document.onmouseup = handleMouseUp;
-    document.onmousemove = handleMouseMove;
 
     draw_3d();
+    animationframe_id = window.requestAnimationFrame(draw_3d);
 }
 
 function initShaders() {

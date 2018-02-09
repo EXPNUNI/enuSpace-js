@@ -24,6 +24,10 @@ function ellipseradius()
 function CreateCanvas()
 {
 	canvas = $('#ID_CANVAS')[0];
+	if(canvas.getAttribute("hidden") != null)
+	{
+		canvas.removeAttribute("hidden");
+	}
 	canvas_2Ddraw = canvas.getContext("2d");
 
 	//Mouse Events
@@ -617,6 +621,7 @@ BoundingBox = function(x1, y1, x2, y2) { // pass in initial points if you want
 
 function Draw_Init(obj)
 {
+	CreateCanvas();
     if(obj != undefined)
     {
         BoundBoxs =[];

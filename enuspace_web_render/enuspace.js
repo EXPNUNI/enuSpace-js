@@ -223,7 +223,9 @@ function requestpage(pagename)
                 {
                     clearInterval(interval_id);
                 }
-                delete window[root_obj_id];
+				var canvas = document.getElementById("ID_CANVAS");
+				canvas.setAttribute("hidden","");
+                window[root_obj_id] = null;
             }
         }
     }
@@ -235,7 +237,9 @@ function requestpage(pagename)
             {
                 clearInterval(interval_id);
             }
-            delete x3dSceneobj;
+			var canvas = document.getElementById("ID_CANVAS_3D");
+			canvas.setAttribute("hidden","");
+            x3dSceneobj = null;
         }
     }
     //12.14 LWH
@@ -461,7 +465,7 @@ var prev_time_mode;     // 이전 타임모드
 var GridentList =[];
 var mouse_over_obj;
 //2017.11.28 LWH 추가
-var render_mode;    //랜더링 모드 2d or 3d
+var render_mode = "";    //랜더링 모드 2d or 3d
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
