@@ -13,6 +13,7 @@ var mvMatrix = mat4.create();
 var mvMatrixStack = [];
 var pMatrix = mat4.create();
 var root_obj_3d = null;
+var text_font;
 
 //animation frame id
 var animationframe_id = null;
@@ -85,6 +86,7 @@ function handlemousewheel(e){
 
 function draw_3d() {
     drawScene(root_obj_3d);
+    animationframe_id = window.requestAnimationFrame(draw_3d);
 //    renderer.render( scene, camera );
 //    animate();
 }
@@ -115,7 +117,19 @@ function initDraw(rootobj) {
     camera.position.z = 1000;
     scene = new THREE.Scene();
     renderer = new THREE.WebGLRenderer(gl);
-    
+	var loader = new THREE.FontLoader();
+	loader.load( 'fonts/helvetiker_regular.typeface.json',
+		function ( pass ) {
+			text_font = pass;
+		},
+		// onProgress callback
+		function ( xhr ) {
+			console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+		},
+		function ( err ) {
+			error_msg = false;
+		}
+	);	
     /*var material = new THREE.MeshBasicMaterial( { color: "rgb(255,0,255)" } );
     object = new THREE.Mesh( new THREE.BoxGeometry( 200, 200, 200, 4, 4, 4 ), material );
     object.position.set( 0, 0, 0 );
@@ -160,19 +174,18 @@ function initDraw(rootobj) {
     canvas3d.addEventListener("mouseup",handleMouseUp,false);
     canvas3d.addEventListener("mousemove",handleMouseMove,false);
     mousewheelevt=(/Firefox/i.test(navigator.userAgent))? "DOMMouseScroll" : "mousewheel"
-        
-    if (canvas.attachEvent) //if IE (and Opera depending on user setting)
+    
+    if (canvas3d.attachEvent) //if IE (and Opera depending on user setting)
     {
         canvas3d.attachEvent("on"+mousewheelevt, handlemousewheel);
     }
-    else if (canvas.addEventListener) //WC3 browsers
+    else if (canvas3d.addEventListener) //WC3 browsers
     {
         canvas3d.addEventListener(mousewheelevt,handlemousewheel,false);
     }
     
 
     draw_3d();
-    animationframe_id = window.requestAnimationFrame(draw_3d);
 }
 
 function initShaders() {
@@ -267,7 +280,7 @@ function drawScene(parentobj) {
                 }
                 else if(child.nodename == "Text")
                 {
-                    //DrawText(child);
+                    DrawText(child);
                 }
                 else if(child.nodename == "Cone")
                 {
@@ -1069,4 +1082,81 @@ function Draw3DContour(obj)
 function get_hidden_points(obj, x, y, z)
 {
     return obj.hidden_points[x][y][z];
+}
+
+function DrawText(obj)
+{
+	if(!text_font)
+	{
+		return;
+	}
+	var textgeometry;
+	
+	textgeometry = new THREE.TextGeometry( obj.string, {
+			font: text_font,
+			size: obj.size,
+			height: 3,
+			curveSegments: 2
+	});
+	
+    vertices = [];
+	for(var i = 0; i < textgeometry.vertices.length;i++)
+	{
+		vertices.push(textgeometry.vertices[i].x,textgeometry.vertices[i].y,textgeometry.vertices[i].z);
+	}
+    textVertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, textVertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    textVertexBuffer.itemSize = 3;
+    textVertexBuffer.numItems = textgeometry.vertices.length;
+
+    var colors = [];
+    for(var i = 0; i < textgeometry.vertices.length;i++)
+    {
+        colors.push(parseFloat(obj.diffuseColor[0]), parseFloat(obj.diffuseColor[1]), parseFloat(obj.diffuseColor[2]), 1.0);
+    }
+    textVertexColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, textVertexColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+    textVertexColorBuffer.itemSize = 4;
+    textVertexColorBuffer.numItems = textgeometry.vertices.length;
+    
+    var textIndices = [];
+	for(var i = 0; i < textgeometry.faces.length; i++)
+	{
+		textIndices.push(textgeometry.faces[i].a,textgeometry.faces[i].b,textgeometry.faces[i].c);
+	}
+	textIndexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, textIndexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(textIndices), gl.STATIC_DRAW);
+    textIndexBuffer.itemSize = 1;
+    textIndexBuffer.numItems = textgeometry.faces.length * 3;
+	
+    mvPushMatrix();
+    mat4.translate(mvMatrix, [obj.translation_x, obj.translation_y, obj.translation_z]);
+    mat4.rotate(mvMatrix, degToRad(obj.rotation_x), [1, 0, 0]);
+    mat4.rotate(mvMatrix, degToRad(obj.rotation_y), [0, 1, 0]);
+    mat4.rotate(mvMatrix, degToRad(obj.rotation_z), [0, 0, 1]);
+    mat4.translate(mvMatrix, [obj.center_x, obj.center_y, obj.center_z]);
+    
+	var xformMatrix = new Float32Array([
+		obj.scale_x,   0.0,  0.0,  0.0,
+		0.0,  obj.scale_y,   0.0,  0.0,
+		0.0,  0.0,  obj.scale_z,   0.0,
+		0.0,  0.0,  0.0,  1.0  
+	]);
+
+	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
+	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+	
+    //vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, textVertexBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, textVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //색상 vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, textVertexColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, textVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, textIndexBuffer);
+    setMatrixUniforms();
+    gl.drawElements(gl.TRIANGLES, textIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+    mvPopMatrix();
 }
