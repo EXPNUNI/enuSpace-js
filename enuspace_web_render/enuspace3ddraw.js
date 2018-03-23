@@ -7,13 +7,17 @@ var shaderProgram = null;
 var mouseDown = false;
 var lastMouseX = null;
 var lastMouseY = null;
-var cameraRotationMatrix = mat4.create();
-mat4.identity(cameraRotationMatrix);
+var cameraRotationMatrix_z = mat4.create();
+mat4.identity(cameraRotationMatrix_z);
+var cameraRotationMatrix_x = mat4.create();
+mat4.identity(cameraRotationMatrix_x);
 var mvMatrix = mat4.create();
 var mvMatrixStack = [];
 var pMatrix = mat4.create();
 var root_obj_3d = null;
-var text_font;
+var text_font;	//3d text의 폰트 저장용
+var textCtx = document.createElement("canvas").getContext("2d");	// 3d text가 아닌 2d 텍스쳐 텍스트 생성용 캔버스 생성
+var textMatrix = mat4.create();
 
 //animation frame id
 var animationframe_id = null;
@@ -51,16 +55,16 @@ function handleMouseMove(event) {
     }
     var newX = event.clientX;
     var newY = event.clientY;
-
+	
     var deltaX = newX - lastMouseX;
-    var newRotationMatrix = mat4.create();
-    mat4.identity(newRotationMatrix);
-    mat4.rotate(newRotationMatrix, degToRad(deltaX / 10), [0, 0, 1]);
+    //var newRotationMatrix = mat4.create();
+    //mat4.identity(newRotationMatrix);
+    mat4.rotate(cameraRotationMatrix_z, degToRad(deltaX / 10), [0, 0, 1]);
 
     var deltaY = newY - lastMouseY;
-    mat4.rotate(newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
+    mat4.rotate(cameraRotationMatrix_x, degToRad(deltaY / 10), [1, 0, 0]);
 
-    mat4.multiply(newRotationMatrix, cameraRotationMatrix, cameraRotationMatrix);
+    //mat4.multiply(newRotationMatrix, cameraRotationMatrix, cameraRotationMatrix);
 
     lastMouseX = newX;
     lastMouseY = newY;
@@ -93,7 +97,7 @@ function draw_3d() {
 
 function initGL(canvas) {
 	try {
-		gl = canvas.getContext("experimental-webgl");
+		gl = canvas.getContext("webgl");
 		gl.viewportWidth = window.innerWidth;
 		gl.viewportHeight = window.innerHeight;
         gl.canvas.width = window.innerWidth;
@@ -190,11 +194,48 @@ function initDraw(rootobj) {
 
 function initShaders() {
     
-    var frag_str = "precision mediump float;varying vec4 vColor;void main(void){ gl_FragColor = vColor;}"
-    var vertex_str = "attribute vec3 aVertexPosition;attribute vec4 aVertexColor;uniform mat4 uMVMatrix;uniform mat4 uPMatrix;uniform mat4 u_xformMatrix;varying vec4 vColor; void main(void) { gl_Position = uPMatrix * uMVMatrix * u_xformMatrix * vec4(aVertexPosition, 1.0); vColor = aVertexColor;}"
+    var frag_str = `
+	precision mediump float;
+	varying vec4 vColor;
+	void main(){ 
+		gl_FragColor = vColor;
+	}`;
+	//  	gl_FragColor = texture2D(uSampler, aTextureCoord);      
+	var vertex_str = `
+	attribute vec3 aVertexPosition;
+	attribute vec4 aVertexColor;
+	uniform mat4 uMVMatrix;
+	uniform mat4 uPMatrix;
+	uniform mat4 u_xformMatrix;
+	varying vec4 vColor;
+	void main() {
+		gl_Position = uPMatrix * uMVMatrix * u_xformMatrix * vec4(aVertexPosition, 1.0);
+		vColor = aVertexColor;
+	}`;
+	var texture_frag_str = `
+	precision mediump float;
+	varying vec2 aTextureCoord;
+	uniform sampler2D uSampler;
+	
+	void main(){ 
+		gl_FragColor = texture2D(uSampler, aTextureCoord);
+	}`;
+	//  	      
+	var texture_vertex_str = `
+	attribute vec3 aVertexPosition;
+	attribute vec2 atexcoord;
+	uniform mat4 uMVMatrix;
+	uniform mat4 uPMatrix;
+	varying vec2 aTextureCoord;
+	void main() {
+		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+		aTextureCoord = atexcoord;
+	}`;
     
     var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    var texture_fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    var texture_vertexShader = gl.createShader(gl.VERTEX_SHADER);
 
     //fragment shader
     gl.shaderSource(fragmentShader, frag_str);
@@ -202,24 +243,35 @@ function initShaders() {
     //vertex shader
     gl.shaderSource(vertexShader, vertex_str);
     gl.compileShader(vertexShader);
-    
+	
+    //texture fragment shader
+    gl.shaderSource(texture_fragmentShader, texture_frag_str);
+    gl.compileShader(texture_fragmentShader);
+    //texture vertex shader
+    gl.shaderSource(texture_vertexShader, texture_vertex_str);
+    gl.compileShader(texture_vertexShader);
+	
     shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
     gl.attachShader(shaderProgram, fragmentShader);
     gl.linkProgram(shaderProgram);
-
+	
+    texture_shaderProgram = gl.createProgram();
+    gl.attachShader(texture_shaderProgram, texture_vertexShader);
+    gl.attachShader(texture_shaderProgram, texture_fragmentShader);
+    gl.linkProgram(texture_shaderProgram);
+	
     if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-        alert("Could not initialise shaders");
+        alert("Could not initialise normal shaders");
     }
-
-    gl.useProgram(shaderProgram);
-
+	gl.useProgram(shaderProgram);
+	
     shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
     gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
     shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
     gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
-
+	    
     shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
     shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
 }
@@ -256,11 +308,12 @@ function drawScene(parentobj) {
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
-    mat4.perspective(75, gl.viewportWidth / gl.viewportHeight, 0.1, 10000.0, pMatrix);
+    mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 10000.0, pMatrix);
     mat4.identity(mvMatrix);
     mat4.translate(mvMatrix, [0.0, 0.0, -(camera_distance)]);
     mat4.rotate(mvMatrix, degToRad(-70), [1, 0, 0]);
-    mat4.multiply(mvMatrix, cameraRotationMatrix);
+    mat4.multiply(mvMatrix, cameraRotationMatrix_x);
+    mat4.multiply(mvMatrix, cameraRotationMatrix_z);
     
     if(parentobj)
 	{
@@ -280,7 +333,7 @@ function drawScene(parentobj) {
                 }
                 else if(child.nodename == "Text")
                 {
-                    DrawText(child);
+                    Draw3DText(child);
                 }
                 else if(child.nodename == "Cone")
                 {
@@ -890,15 +943,15 @@ function DrawLineSet(obj) {
 
 function DrawTerrain(obj)
 {
-    var x_interval = obj.size_x/obj.subdivision_x;
-    var y_interval = obj.size_y/obj.subdivision_y;
-    
+    var x_interval = obj.size_x/(obj.subdivision_x-1);
+    var y_interval = obj.size_y/(obj.subdivision_y-1);
+    // terrain 그리기
     var point = [];
     for(var i = 0; i < obj.subdivision_x; i++)
     {
         for(var j = 0; j < obj.subdivision_y; j++)
         {
-            point.push(x_interval * i, y_interval * j, obj.data[i][j] == undefined ? obj.minElevation : obj.data[j][i] <= obj.maxElevation ? obj.data[i][j] >= obj.minElevation ? obj.data[i][j] : obj.minElevation : obj.maxElevation);
+            point.push(x_interval * i, y_interval * j, obj.data[i][j] == undefined ? obj.minElevation : obj.data[i][j] <= obj.maxElevation ? obj.data[i][j] >= obj.minElevation ? obj.data[i][j] : obj.minElevation : obj.maxElevation);
         }
     }
     TerrainVertexBuffer = gl.createBuffer();
@@ -937,7 +990,112 @@ function DrawTerrain(obj)
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(terrainIndices), gl.STATIC_DRAW);
     TerrainIndexBuffer.itemSize = 1;
     TerrainIndexBuffer.numItems = terrainIndices.length;
-    
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// terrain 그리드 그리기
+	var size = function(){ this.x; this.y; this.z;};
+	size.x = obj.size_x/(obj.subdivision_x-1);
+	size.y = obj.size_y/(obj.subdivision_y-1);
+	size.z = obj.height/5;
+	var grid_point = [];
+	for(var i = 0; i <= 5; i++)
+	{
+		for(var k = 0; k < obj.subdivision_x; k++)
+		{
+			grid_point.push(size.x * k	,0			,size.z * i);
+			grid_point.push(size.x * k	,obj.height	,size.z * i);
+		}
+		for(var j = 0; j < obj.subdivision_y; j++)
+		{
+			grid_point.push(0			,size.y * j	,size.z * i);
+			grid_point.push(obj.size_x	,size.y * j	,size.z * i);
+		}
+	}
+	for(var i = 0; i < obj.subdivision_x; i++)
+	{
+		for(var j = 0; j < obj.subdivision_y; j++)
+		{
+			grid_point.push(size.x * i	,size.y * j	,0);
+			grid_point.push(size.x * i	,size.y * j	,obj.height);
+		}
+	}
+	gridVertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_point), gl.STATIC_DRAW);
+    gridVertexBuffer.itemSize = 3;
+    gridVertexBuffer.numItems = grid_point.length/3;
+	
+	var grid_colors = [];
+    for(var i = 0; i < gridVertexBuffer.numItems; i++)
+    {
+		grid_colors.push(0.5,0.5,0.5,0.5);
+    }
+    gridColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_colors), gl.STATIC_DRAW);
+    gridColorBuffer.itemSize = 4;
+    gridColorBuffer.numItems = gridVertexBuffer.numItems;
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// terrain 외곽선 그리기
+	var outline_point = [0			,0			,0,
+						obj.size_x	,0			,0,
+						obj.size_x	,obj.size_y	,0,
+						0			,obj.size_y	,0,
+						0			,0			,obj.height,
+						obj.size_x	,0			,obj.height,
+						obj.size_x	,obj.size_y	,obj.height,
+						0			,obj.size_y	,obj.height];
+	outlineVertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_point), gl.STATIC_DRAW);
+    outlineVertexBuffer.itemSize = 3;
+    outlineVertexBuffer.numItems = outline_point.length/3;
+	
+	var outline_colors = [];
+    for(var i = 0; i < outlineVertexBuffer.numItems; i++)
+    {
+		outline_colors.push(1.0,1.0,1.0,1.0);
+    }
+    outlineColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_colors), gl.STATIC_DRAW);
+    outlineColorBuffer.itemSize = 4;
+    outlineColorBuffer.numItems = outlineVertexBuffer.numItems;
+	
+    var outlineindices = [0, 1, 1, 2, 2, 3, 3, 0,	// bottom face
+						4, 5, 5, 6, 6, 7, 7, 4,		// top face
+						0, 4, 1, 5, 2, 6, 3, 7];	// pillar
+	outlineIndexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(outlineindices), gl.STATIC_DRAW);
+    outlineIndexBuffer.itemSize = 1;
+    outlineIndexBuffer.numItems = outlineindices.length;
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// terrain x, y, z축 라벨 그리기
+	var x_y_label_pos = [];
+	var z_label_pos = [];
+	
+	for(var i = 0; i < obj.subdivision_x; i++)
+	{
+		x_y_label_pos.push([size.x * i, 0, 0]);
+	}
+	for(var i = 0; i < obj.subdivision_y; i++)
+	{
+		x_y_label_pos.push([0, size.y * i, 0]);
+	}
+	for(var i = 0; i <= 5; i++)
+	{
+		z_label_pos.push([0			, 0			, size.z * i],
+						 [obj.size_x, 0			, size.z * i],
+						 [0			, obj.size_y, size.z * i],
+						 [obj.size_x, obj.size_y, size.z * i]);
+	}
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	    
     //draw 시작
     mvPushMatrix();
     mat4.translate(mvMatrix, [obj.translation_x, obj.translation_y, obj.translation_z]);
@@ -956,6 +1114,8 @@ function DrawTerrain(obj)
 	var u_xformMatrix = gl.getUniformLocation(shaderProgram, 'u_xformMatrix');
 	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
 	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// terrain 그리기
     //vertex버퍼 바인드
     gl.bindBuffer(gl.ARRAY_BUFFER, TerrainVertexBuffer);
     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, TerrainVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -966,14 +1126,129 @@ function DrawTerrain(obj)
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, TerrainIndexBuffer);
     setMatrixUniforms();
     gl.drawElements(gl.TRIANGLES, TerrainIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-    mvPopMatrix();
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// terrain 그리드 그리기
+	//vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, gridVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //색상 vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, gridColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    setMatrixUniforms();
+    gl.drawArrays(gl.LINES, 0, gridVertexBuffer.numItems);
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// terrain 외곽선 그리기
+    //vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, outlineVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //색상 vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, outlineColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //인덱스 버퍼 바인드
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
+    setMatrixUniforms();
+    gl.drawElements(gl.LINES, outlineIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// terrain 라벨 그리기
+	// 기존에 쓰던 어트리뷰트 비활성화
+	mvPushMatrix();
+	gl.disableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+	gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
+	// 텍스쳐용 셰이더 사용
+	gl.useProgram(texture_shaderProgram);
+	// 텍스쳐용 어트리뷰트 포인터 활성화
+    texture_shaderProgram.vertexPositionAttribute = gl.getAttribLocation(texture_shaderProgram, "aVertexPosition");
+    gl.enableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
+    texture_shaderProgram.vertexColorAttribute = gl.getAttribLocation(texture_shaderProgram, "atexcoord");
+    gl.enableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
+	// 텍스쳐용 유니폼 포인터 지정
+    texture_shaderProgram.pMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uPMatrix");
+    texture_shaderProgram.mvMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uMVMatrix");
+    texture_shaderProgram.uSampler = gl.getUniformLocation(texture_shaderProgram, "uSampler");
+	//gl.enable(gl.BLEND);
+    //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+	for(var i = 0; i < obj.subdivision_x; i++)
+	{
+		DrawText("("+i+", 0)", x_y_label_pos[i],obj);
+	}
+	for(var i = obj.subdivision_x; i < (obj.subdivision_x + obj.subdivision_y); i++)
+	{
+		DrawText("(0, "+(i-obj.subdivision_x)+")", x_y_label_pos[i],obj);
+	}
+	for(var i = 0; i < z_label_pos.length; i++)
+	{
+		var zlabel;
+		switch(i)
+		{
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+				zlabel = 0;
+				break;
+			case 4:
+			case 5:
+			case 6:
+			case 7:
+				zlabel = 20;
+				break;
+			case 8:
+			case 9:
+			case 10:
+			case 11:
+				zlabel = 40;
+				break;
+			case 12:
+			case 13:
+			case 14:
+			case 15:
+				zlabel = 60
+				break;
+			case 16:
+			case 17:
+			case 18:
+			case 19:
+				zlabel = 80;
+				break;
+			case 20:
+			case 21:
+			case 22:
+			case 23:
+				zlabel = 100;
+				break;
+			default:
+				break;
+		}
+		DrawText(zlabel, z_label_pos[i],obj);
+	}
+	// 텍스쳐용 어트리뷰트 비활성화
+	gl.disableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
+	gl.disableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
+	// 기본 셰이더 사용
+	gl.useProgram(shaderProgram);
+	// 기본 셰이더 어트리뷰트 활성화
+    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+    gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+	mvPopMatrix();
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+	//gl.enable(gl.DEPTH_TEST);
+	//gl.disable(gl.BLEND);
+	gl.depthMask(true);
+	mvPopMatrix();
 }
 
 function Draw3DContour(obj)
 {
-    var x_interval = obj.size_x/obj.subdivision_x;
-    var y_interval = obj.size_y/obj.subdivision_y;
-    var z_interval = obj.height/obj.subdivision_z;
+    var x_interval = obj.size_x/(obj.subdivision_x-1);
+    var y_interval = obj.size_y/(obj.subdivision_y-1);
+    var z_interval = obj.height/(obj.subdivision_z-1);
     
     var point = [];
     for(var i = 0; i < obj.subdivision_x; i++)
@@ -1048,6 +1323,111 @@ function Draw3DContour(obj)
     ContourIndexBuffer.itemSize = 1;
     ContourIndexBuffer.numItems = ContourIndices.length;
     
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// contour 그리드 그리기
+	var size = new struct_3d_size();
+	size.x = obj.size_x/(obj.subdivision_x-1);
+	size.y = obj.size_y/(obj.subdivision_y-1);
+	size.z = obj.height/(obj.subdivision_z-1);
+	var grid_point = [];
+	for(var i = 0; i <= obj.subdivision_z; i++)
+	{
+		for(var k = 0; k < obj.subdivision_x; k++)
+		{
+			grid_point.push(size.x * k	,0			,size.z * i);
+			grid_point.push(size.x * k	,obj.height	,size.z * i);
+		}
+		for(var j = 0; j < obj.subdivision_y; j++)
+		{
+			grid_point.push(0			,size.y * j	,size.z * i);
+			grid_point.push(obj.size_x	,size.y * j	,size.z * i);
+		}
+	}
+	for(var i = 0; i < obj.subdivision_x; i++)
+	{
+		for(var j = 0; j < obj.subdivision_y; j++)
+		{
+			grid_point.push(size.x * i	,size.y * j	,0);
+			grid_point.push(size.x * i	,size.y * j	,obj.height);
+		}
+	}
+	gridVertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_point), gl.STATIC_DRAW);
+    gridVertexBuffer.itemSize = 3;
+    gridVertexBuffer.numItems = grid_point.length/3;
+	
+	var grid_colors = [];
+    for(var i = 0; i < gridVertexBuffer.numItems; i++)
+    {
+		grid_colors.push(0.5,0.5,0.5,0.5);
+    }
+    gridColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_colors), gl.STATIC_DRAW);
+    gridColorBuffer.itemSize = 4;
+    gridColorBuffer.numItems = gridVertexBuffer.numItems;
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// contour 외곽선 그리기
+	var outline_point = [0			,0			,0,
+						obj.size_x	,0			,0,
+						obj.size_x	,obj.size_y	,0,
+						0			,obj.size_y	,0,
+						0			,0			,obj.height,
+						obj.size_x	,0			,obj.height,
+						obj.size_x	,obj.size_y	,obj.height,
+						0			,obj.size_y	,obj.height];
+	outlineVertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_point), gl.STATIC_DRAW);
+    outlineVertexBuffer.itemSize = 3;
+    outlineVertexBuffer.numItems = outline_point.length/3;
+	
+	var outline_colors = [];
+    for(var i = 0; i < outlineVertexBuffer.numItems; i++)
+    {
+		outline_colors.push(1.0,1.0,1.0,1.0);
+    }
+    outlineColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_colors), gl.STATIC_DRAW);
+    outlineColorBuffer.itemSize = 4;
+    outlineColorBuffer.numItems = outlineVertexBuffer.numItems;
+	
+    var outlineindices = [0, 1, 1, 2, 2, 3, 3, 0,	// bottom face
+						4, 5, 5, 6, 6, 7, 7, 4,		// top face
+						0, 4, 1, 5, 2, 6, 3, 7];	// pillar
+	outlineIndexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(outlineindices), gl.STATIC_DRAW);
+    outlineIndexBuffer.itemSize = 1;
+    outlineIndexBuffer.numItems = outlineindices.length;
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// contour x, y, z축 라벨 그리기
+	var x_y_label_pos = [];
+	var z_label_pos = [];
+	var z_label_interval = obj.height/5;
+	for(var i = 0; i < obj.subdivision_x; i++)
+	{
+		x_y_label_pos.push([size.x * i, 0, 0]);
+	}
+	for(var i = 0; i < obj.subdivision_y; i++)
+	{
+		x_y_label_pos.push([0, size.y * i, 0]);
+	}
+	for(var i = 0; i <= 5; i++)
+	{
+		z_label_pos.push([0			, 0			, z_label_interval * i],
+						 [obj.size_x, 0			, z_label_interval * i],
+						 [0			, obj.size_y, z_label_interval * i],
+						 [obj.size_x, obj.size_y, z_label_interval * i]);
+	}
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
     //draw 시작
     mvPushMatrix();
     mat4.translate(mvMatrix, [obj.translation_x, obj.translation_y, obj.translation_z]);
@@ -1076,6 +1456,120 @@ function Draw3DContour(obj)
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ContourIndexBuffer);
     setMatrixUniforms();
     gl.drawElements(gl.TRIANGLES, ContourIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// contour 그리드 그리기
+	//vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, gridVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //색상 vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, gridColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    setMatrixUniforms();
+    gl.drawArrays(gl.LINES, 0, gridVertexBuffer.numItems);
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// contour 외곽선 그리기
+    //vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, outlineVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //색상 vertex버퍼 바인드
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, outlineColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    //인덱스 버퍼 바인드
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
+    setMatrixUniforms();
+    gl.drawElements(gl.LINES, outlineIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// contour 라벨 그리기
+	// 기존에 쓰던 어트리뷰트 비활성화
+	mvPushMatrix();
+	gl.disableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+	gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
+	// 텍스쳐용 셰이더 사용
+	gl.useProgram(texture_shaderProgram);
+	// 텍스쳐용 어트리뷰트 포인터 활성화
+    texture_shaderProgram.vertexPositionAttribute = gl.getAttribLocation(texture_shaderProgram, "aVertexPosition");
+    gl.enableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
+    texture_shaderProgram.vertexColorAttribute = gl.getAttribLocation(texture_shaderProgram, "atexcoord");
+    gl.enableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
+	// 텍스쳐용 유니폼 포인터 지정
+    texture_shaderProgram.pMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uPMatrix");
+    texture_shaderProgram.mvMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uMVMatrix");
+    texture_shaderProgram.uSampler = gl.getUniformLocation(texture_shaderProgram, "uSampler");
+	//gl.enable(gl.BLEND);
+    //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+	for(var i = 0; i < obj.subdivision_x; i++)
+	{
+		DrawText("("+i+", 0)", x_y_label_pos[i],obj);
+	}
+	for(var i = obj.subdivision_x; i < (obj.subdivision_x + obj.subdivision_y); i++)
+	{
+		DrawText("(0, "+(i-obj.subdivision_x)+")", x_y_label_pos[i],obj);
+	}
+	for(var i = 0; i < z_label_pos.length; i++)
+	{
+		var zlabel;
+		switch(i)
+		{
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+				zlabel = 0;
+				break;
+			case 4:
+			case 5:
+			case 6:
+			case 7:
+				zlabel = 20;
+				break;
+			case 8:
+			case 9:
+			case 10:
+			case 11:
+				zlabel = 40;
+				break;
+			case 12:
+			case 13:
+			case 14:
+			case 15:
+				zlabel = 60
+				break;
+			case 16:
+			case 17:
+			case 18:
+			case 19:
+				zlabel = 80;
+				break;
+			case 20:
+			case 21:
+			case 22:
+			case 23:
+				zlabel = 100;
+				break;
+			default:
+				break;
+		}
+		DrawText(zlabel, z_label_pos[i],obj);
+	}
+	// 텍스쳐용 어트리뷰트 비활성화
+	gl.disableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
+	gl.disableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
+	// 기본 셰이더 사용
+	gl.useProgram(shaderProgram);
+	// 기본 셰이더 어트리뷰트 활성화
+    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+    gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+	mvPopMatrix();
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+	//gl.enable(gl.DEPTH_TEST);
+	//gl.disable(gl.BLEND);
+	gl.depthMask(true);
     mvPopMatrix();
 }
 
@@ -1084,7 +1578,7 @@ function get_hidden_points(obj, x, y, z)
     return obj.hidden_points[x][y][z];
 }
 
-function DrawText(obj)
+function Draw3DText(obj)
 {
 	if(!text_font)
 	{
@@ -1158,5 +1652,72 @@ function DrawText(obj)
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, textIndexBuffer);
     setMatrixUniforms();
     gl.drawElements(gl.TRIANGLES, textIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+    mvPopMatrix();
+}
+
+function DrawText(text, pos, obj)
+{
+	textCtx.canvas.width  = 150;
+	textCtx.canvas.height = 80;
+	textCtx.font = "30px arial";
+	textCtx.textAlign = "left";
+	textCtx.textBaseline = "middle";
+	textCtx.fillStyle = "white";
+	textCtx.clearRect(0, 0, textCtx.canvas.width, textCtx.canvas.height);
+	textCtx.fillText(text, 0, textCtx.canvas.height/2);
+	
+	var textTex = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, textTex);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCtx.canvas);
+	// make sure we can render it even if it's not a power of 2
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	
+	var position = [1						, -textCtx.canvas.height/16, 0,
+					1 + textCtx.canvas.width/8	, -textCtx.canvas.height/16, 0,
+					1						, textCtx.canvas.height/16, 0,
+					1						, textCtx.canvas.height/16, 0,
+					1 + textCtx.canvas.width/8	, -textCtx.canvas.height/16, 0,
+					1 + textCtx.canvas.width/8	, textCtx.canvas.height/16, 0];
+	positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(position), gl.STATIC_DRAW);
+    positionBuffer.itemSize = 3;
+    positionBuffer.numItems = position.length/3;
+	
+	var textureCoord = [0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0];
+	textureCoordBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoord),	gl.STATIC_DRAW);
+	textureCoordBuffer.itemSize = 2;
+	textureCoordBuffer.numItems = textureCoord.length/2;
+	
+    mvPushMatrix();
+	mat4.identity(textMatrix);
+	//mat4.translate(textMatrix, [0, 0, -camera_distance]);
+	mat4.translate(mvMatrix, [pos[0], pos[1], pos[2]]);
+	mat4.translate(textMatrix, [mvMatrix[12], mvMatrix[13], mvMatrix[14]]);
+	//mat4.rotate(textMatrix, degToRad(-70), [1, 0, 0]);
+	//mat4.translate(textMatrix, [obj.translation_x, obj.translation_y, obj.translation_z]);
+	//mat4.multiply(mvMatrix, pMatrix, textMatrix);
+	//mat4.translate(textMatrix, [0, 0, camera_distance]);
+	//mat4.multiply(textMatrix, cameraRotationMatrix);
+	//mat4.rotate(textMatrix, degToRad(-180), [1, 0, 0]);
+    
+	
+	gl.uniformMatrix4fv(texture_shaderProgram.pMatrixUniform, false, pMatrix);
+	gl.uniformMatrix4fv(texture_shaderProgram.mvMatrixUniform, false, textMatrix);
+	
+	// at draw time
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, textTex);  // and some texture
+	gl.uniform1i(texture_shaderProgram.uSampler,0);
+	
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.vertexAttribPointer(texture_shaderProgram.vertexPositionAttribute, positionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+    gl.vertexAttribPointer(texture_shaderProgram.vertexColorAttribute, textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.drawArrays(gl.TRIANGLES, 0, positionBuffer.numItems);
     mvPopMatrix();
 }
