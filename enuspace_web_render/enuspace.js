@@ -211,6 +211,82 @@ function getPictureValue(page)
 	xmlHttp.setRequestHeader("Pragma","no-cache");
 	xmlHttp.send(strParam);
 }
+function getValue_Package(objtagid)
+{
+    var xmlHttp = new XMLHttpRequest();
+	var strUrl = "getvalue_package" ;
+	var strParam= "tagid="+objtagid;
+
+    xmlHttp.open("POST", strUrl, false);	
+	xmlHttp.setRequestHeader("Content-Type","application/x-www-form-urlencoded;charset=UTF-8");
+	xmlHttp.setRequestHeader("Cache-Control","no-cache, must-revalidate");
+	xmlHttp.setRequestHeader("Pragma","no-cache");
+	var start_time = new Date();
+	console.log("요청시각(밀리초 표시):"+start_time.getHours()+":"+start_time.getMinutes()+":"+start_time.getSeconds() +"."+start_time.getMilliseconds());
+	xmlHttp.send(strParam);
+	
+	var msg = xmlHttp.responseText;
+
+	var arr;
+	if(msg != "")
+	{
+		arr = JSON.parse(msg);
+	}
+
+	if(arr != undefined)
+	{
+		if(arr.RESULT_CODE == "RESULT_OK")
+		{
+			var end_time = new Date();
+			console.log("응답시각(밀리초 표시):"+end_time.getHours()+":"+end_time.getMinutes()+":"+end_time.getSeconds() +"."+end_time.getMilliseconds());
+			console.log("결과코드: "+arr.RESULT_CODE);
+	
+			if(arr.VALUES[0].TAGID.indexOf("[") == -1)
+			{
+				var result_arr = arr.VALUES[0].VALUE.split(";");
+				var split_dimention_arr = [];
+				var arraysize = parseFloat(arr.VALUES[0].ARRAYSIZE);
+				var dimension_arr = arr.VALUES[0].DIMENSION.replace(/\]/g,"").split("[");
+				dimension_arr.shift();
+				result_arr.pop();
+				
+				for(var i = 1; i <= dimension_arr.length; i++)
+				{
+					var temp_arr = new Array();
+					arraysize = arraysize / dimension_arr[dimension_arr.length-i];
+					for(var j = 1; j <= arraysize; j++)
+					{
+						temp_arr.push(result_arr.slice(dimension_arr[dimension_arr.length-i]*(j-1),dimension_arr[dimension_arr.length-i]*j));
+					}
+					result_arr = temp_arr.slice(0);
+				}
+				return result_arr;
+			}
+			else
+			{
+				switch(arr.VALUES[0].VARTYPE)
+				{
+					case "INT":
+						return parseInt(arr.VALUES[0].VALUE);
+					case "FLOAT":
+					case "DOUBLE":
+						return parseFloat(arr.VALUES[0].VALUE);
+					case "STRING":
+						return arr.VALUES[0].VALUE;
+					case "BOOL":
+						return Boolean(arr.VALUES[0].VALUE);
+				}
+			}
+		}
+		else
+		{
+			if(arr.RESULT_CODE == "CODE_INVALID_ID")
+			{
+				console.log("getValue_Package: 찾는 ID가 없습니다.");
+			}
+		}
+	}
+}
 function requestpage(pagename) 
 {
     if(render_mode == "2d")
@@ -388,7 +464,7 @@ function GetTagValue(tag)
 	xmlHttp.setRequestHeader("Content-Type","application/x-www-form-urlencoded;charset=UTF-8");
 	xmlHttp.setRequestHeader("Cache-Control","no-cache, must-revalidate");
 	xmlHttp.setRequestHeader("Pragma","no-cache");
-	xmlHttp.send(strParam);	
+	xmlHttp.send(strParam);
 
 	var msg = xmlHttp.responseText;
 

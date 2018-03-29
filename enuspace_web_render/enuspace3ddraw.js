@@ -1330,7 +1330,7 @@ function Draw3DContour(obj)
 	size.y = obj.size_y/(obj.subdivision_y-1);
 	size.z = obj.height/(obj.subdivision_z-1);
 	var grid_point = [];
-	for(var i = 0; i <= obj.subdivision_z; i++)
+	for(var i = 0; i < obj.subdivision_z; i++)
 	{
 		for(var k = 0; k < obj.subdivision_x; k++)
 		{
