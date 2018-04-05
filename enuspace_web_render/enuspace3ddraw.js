@@ -97,7 +97,7 @@ function draw_3d() {
 
 function initGL(canvas) {
 	try {
-		gl = canvas.getContext("webgl");
+		gl = canvas.getContext("experimental-webgl",{antialias:false});
 		gl.viewportWidth = window.innerWidth;
 		gl.viewportHeight = window.innerHeight;
         gl.canvas.width = window.innerWidth;
@@ -109,7 +109,9 @@ function initGL(canvas) {
 	}
 }
 
-function initDraw(rootobj) {
+function initDraw(rootobj) {	
+    var canvas2d = document.getElementById("ID_CANVAS");
+	canvas2d.setAttribute("hidden","");
     var canvas3d = document.getElementById("ID_CANVAS_3D");
 	if(canvas3d.getAttribute("hidden") != null)
 	{
@@ -168,12 +170,12 @@ function initDraw(rootobj) {
     */
     
     initShaders();
-//    initTexture();
+//	initTexture();
     root_obj_3d = rootobj;
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     camera_distance = 1000; // default
     gl.disable(gl.CULL_FACE);
-    
+	
     canvas3d.addEventListener("mousedown",handleMouseDown,false);
     canvas3d.addEventListener("mouseup",handleMouseUp,false);
     canvas3d.addEventListener("mousemove",handleMouseMove,false);
@@ -187,7 +189,10 @@ function initDraw(rootobj) {
     {
         canvas3d.addEventListener(mousewheelevt,handlemousewheel,false);
     }
-    
+    var contents = document.getElementById( 'Canvas_contents' );
+	
+	stats = new Stats();
+	contents.appendChild( stats.dom );
 
     draw_3d();
 }
@@ -374,6 +379,7 @@ function drawScene(parentobj) {
 			}
 		}
 	}
+	stats.update();
 }
 /*
 var lastTime = 0;
@@ -945,13 +951,14 @@ function DrawTerrain(obj)
 {
     var x_interval = obj.size_x/(obj.subdivision_x-1);
     var y_interval = obj.size_y/(obj.subdivision_y-1);
+	var z_interval = obj.height/obj.maxElevation;
     // terrain 그리기
     var point = [];
     for(var i = 0; i < obj.subdivision_x; i++)
     {
         for(var j = 0; j < obj.subdivision_y; j++)
         {
-            point.push(x_interval * i, y_interval * j, obj.data[i][j] == undefined ? obj.minElevation : obj.data[i][j] <= obj.maxElevation ? obj.data[i][j] >= obj.minElevation ? obj.data[i][j] : obj.minElevation : obj.maxElevation);
+            point.push(x_interval * i, y_interval * j, obj.data[i][j] == undefined ? obj.minElevation : parseFloat(obj.data[i][j]) <= obj.maxElevation ? parseFloat(obj.data[i][j]) >= obj.minElevation ? (parseFloat(obj.data[i][j]) * z_interval) : obj.minElevation : obj.maxElevation);
         }
     }
     TerrainVertexBuffer = gl.createBuffer();
@@ -965,7 +972,7 @@ function DrawTerrain(obj)
     {
         for(var j = 0; j < obj.subdivision_y; j++)
         {
-            var str_return = GetColorByValue(obj, obj.data[i][j]);
+            var str_return = GetColorByValue(obj, parseFloat(obj.data[i][j]));
             var str_rgb = str_return.substring(4, str_return.length-1).split(",");
             colors.push(parseFloat(str_rgb[0])/255, parseFloat(str_rgb[1])/255, parseFloat(str_rgb[2])/255, 1.0);
         }
@@ -998,25 +1005,25 @@ function DrawTerrain(obj)
 	size.y = obj.size_y/(obj.subdivision_y-1);
 	size.z = obj.height/5;
 	var grid_point = [];
-	for(var i = 0; i <= 5; i++)
-	{
-		for(var k = 0; k < obj.subdivision_x; k++)
-		{
-			grid_point.push(size.x * k	,0			,size.z * i);
-			grid_point.push(size.x * k	,obj.height	,size.z * i);
-		}
-		for(var j = 0; j < obj.subdivision_y; j++)
-		{
-			grid_point.push(0			,size.y * j	,size.z * i);
-			grid_point.push(obj.size_x	,size.y * j	,size.z * i);
-		}
-	}
 	for(var i = 0; i < obj.subdivision_x; i++)
 	{
 		for(var j = 0; j < obj.subdivision_y; j++)
 		{
 			grid_point.push(size.x * i	,size.y * j	,0);
 			grid_point.push(size.x * i	,size.y * j	,obj.height);
+		}
+	}
+	for(var i = 0; i <= 5; i++)
+	{
+		for(var k = 0; k < obj.subdivision_x; k++)
+		{
+			grid_point.push(size.x * k	,0			,size.z * i);
+			grid_point.push(size.x * k	,obj.size_y	,size.z * i);
+		}
+		for(var j = 0; j < obj.subdivision_y; j++)
+		{
+			grid_point.push(0			,size.y * j	,size.z * i);
+			grid_point.push(obj.size_x	,size.y * j	,size.z * i);
 		}
 	}
 	gridVertexBuffer = gl.createBuffer();
@@ -1131,27 +1138,33 @@ function DrawTerrain(obj)
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// terrain 그리드 그리기
 	//vertex버퍼 바인드
-    gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, gridVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    //색상 vertex버퍼 바인드
-    gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, gridColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    setMatrixUniforms();
-    gl.drawArrays(gl.LINES, 0, gridVertexBuffer.numItems);
+	if(obj.grid_visible == true)
+	{
+		gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, gridVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		//색상 vertex버퍼 바인드
+		gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, gridColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		setMatrixUniforms();
+		gl.drawArrays(gl.LINES, 0, gridVertexBuffer.numItems);
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// terrain 외곽선 그리기
     //vertex버퍼 바인드
-    gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, outlineVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    //색상 vertex버퍼 바인드
-    gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, outlineColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    //인덱스 버퍼 바인드
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
-    setMatrixUniforms();
-    gl.drawElements(gl.LINES, outlineIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	if(obj.outline_visible == true)
+	{
+		gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, outlineVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		//색상 vertex버퍼 바인드
+		gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, outlineColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		//인덱스 버퍼 바인드
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
+		setMatrixUniforms();
+		gl.drawElements(gl.LINES, outlineIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -1274,7 +1287,7 @@ function Draw3DContour(obj)
         {
             for(var k = 0; k < obj.subdivision_z; k++)
             {
-                var str_return = GetColorByValue(obj, obj.data[i][j][k]);
+                var str_return = GetColorByValue(obj, parseFloat(obj.data[i][j][k]));
                 var str_rgb = str_return.substring(4, str_return.length-1).split(",");
                 colors.push(parseFloat(str_rgb[0])/255, parseFloat(str_rgb[1])/255, parseFloat(str_rgb[2])/255, 1.0);
             }

@@ -621,6 +621,8 @@ BoundingBox = function(x1, y1, x2, y2) { // pass in initial points if you want
 
 function Draw_Init(obj)
 {
+	var canvas3d = document.getElementById("ID_CANVAS_3D");
+	canvas3d.setAttribute("hidden","");
 	CreateCanvas();
     if(obj != undefined)
     {

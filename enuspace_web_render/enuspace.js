@@ -211,13 +211,13 @@ function getPictureValue(page)
 	xmlHttp.setRequestHeader("Pragma","no-cache");
 	xmlHttp.send(strParam);
 }
-function getValue_Package(objtagid)
+function GetValuePackage(objtagid)
 {
     var xmlHttp = new XMLHttpRequest();
 	var strUrl = "getvalue_package" ;
 	var strParam= "tagid="+objtagid;
 
-    xmlHttp.open("POST", strUrl, false);	
+    xmlHttp.open("POST", strUrl, false);
 	xmlHttp.setRequestHeader("Content-Type","application/x-www-form-urlencoded;charset=UTF-8");
 	xmlHttp.setRequestHeader("Cache-Control","no-cache, must-revalidate");
 	xmlHttp.setRequestHeader("Pragma","no-cache");
@@ -250,7 +250,7 @@ function getValue_Package(objtagid)
 				dimension_arr.shift();
 				result_arr.pop();
 				
-				for(var i = 1; i <= dimension_arr.length; i++)
+				for(var i = 1; i < dimension_arr.length; i++)
 				{
 					var temp_arr = new Array();
 					arraysize = arraysize / dimension_arr[dimension_arr.length-i];
@@ -498,7 +498,6 @@ function GetTagValue(tag)
 		}				
 	}
 }
-
 ////////////////////////////////////////////////////////////////////////////////////////
 //sibling update
 function sibling_update(obj)
@@ -2662,11 +2661,26 @@ function CreateX3DObj(nodeobj)
 			break;
 		}
     }
-    this.bind = background.getAttribute("bind");
-    this.description = background.getAttribute("description");
-    this.skyColor = background.getAttribute("skyColor");
-    this.transparency = background.getAttribute("transparency");
-    
+	
+    this.bind;
+    this.description;
+    this.skyColor;
+    this.transparency;
+	
+    if(background != undefined)
+	{
+		this.bind = background.getAttribute("bind");
+		this.description = background.getAttribute("description");
+		this.skyColor = background.getAttribute("skyColor");
+		this.transparency = background.getAttribute("transparency");
+	}
+	else
+	{
+		this.bind = Boolean(false);
+		this.description = "";
+		this.skyColor = "";
+		this.transparency = "0.000000";
+	}
 	this.width = window.innerWidth;
     this.height = window.innerHeight;
 
@@ -3826,7 +3840,7 @@ function Create3DTerrainObj(nodeobj)
     splittext = nodeobj.getAttribute("subdivision").split(",");
     this.subdivision_x = parseFloat(splittext[0]);
     this.subdivision_y = parseFloat(splittext[1]);
-    this.height = parseFloat(nodeobj.getAttribute("size"));
+    this.height = parseFloat(nodeobj.getAttribute("height"));
     
     this.minElevation = parseFloat(nodeobj.getAttribute("minElevation"));
     this.maxElevation = parseFloat(nodeobj.getAttribute("maxElevation"));
