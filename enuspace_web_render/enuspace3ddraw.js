@@ -1000,106 +1000,117 @@ function DrawTerrain(obj)
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// terrain 그리드 그리기
-	var size = function(){ this.x; this.y; this.z;};
+	var size = new struct_3d_size();
 	size.x = obj.size_x/(obj.subdivision_x-1);
 	size.y = obj.size_y/(obj.subdivision_y-1);
 	size.z = obj.height/5;
-	var grid_point = [];
-	for(var i = 0; i < obj.subdivision_x; i++)
-	{
-		for(var j = 0; j < obj.subdivision_y; j++)
-		{
-			grid_point.push(size.x * i	,size.y * j	,0);
-			grid_point.push(size.x * i	,size.y * j	,obj.height);
-		}
-	}
-	for(var i = 0; i <= 5; i++)
-	{
-		for(var k = 0; k < obj.subdivision_x; k++)
-		{
-			grid_point.push(size.x * k	,0			,size.z * i);
-			grid_point.push(size.x * k	,obj.size_y	,size.z * i);
-		}
-		for(var j = 0; j < obj.subdivision_y; j++)
-		{
-			grid_point.push(0			,size.y * j	,size.z * i);
-			grid_point.push(obj.size_x	,size.y * j	,size.z * i);
-		}
-	}
 	gridVertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_point), gl.STATIC_DRAW);
-    gridVertexBuffer.itemSize = 3;
-    gridVertexBuffer.numItems = grid_point.length/3;
-	
-	var grid_colors = [];
-    for(var i = 0; i < gridVertexBuffer.numItems; i++)
-    {
-		grid_colors.push(0.5,0.5,0.5,0.5);
-    }
-    gridColorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_colors), gl.STATIC_DRAW);
-    gridColorBuffer.itemSize = 4;
-    gridColorBuffer.numItems = gridVertexBuffer.numItems;
+	gridColorBuffer = gl.createBuffer();
+	if(obj.grid_visible == "visible")
+	{
+		var grid_point = [];
+		for(var i = 0; i < obj.subdivision_x; i++)
+		{
+			for(var j = 0; j < obj.subdivision_y; j++)
+			{
+				grid_point.push(size.x * i	,size.y * j	,0);
+				grid_point.push(size.x * i	,size.y * j	,obj.height);
+			}
+		}
+		for(var i = 0; i <= 5; i++)
+		{
+			for(var k = 0; k < obj.subdivision_x; k++)
+			{
+				grid_point.push(size.x * k	,0			,size.z * i);
+				grid_point.push(size.x * k	,obj.size_y	,size.z * i);
+			}
+			for(var j = 0; j < obj.subdivision_y; j++)
+			{
+				grid_point.push(0			,size.y * j	,size.z * i);
+				grid_point.push(obj.size_x	,size.y * j	,size.z * i);
+			}
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_point), gl.STATIC_DRAW);
+		gridVertexBuffer.itemSize = 3;
+		gridVertexBuffer.numItems = grid_point.length/3;
+		
+		var grid_colors = [];
+		for(var i = 0; i < gridVertexBuffer.numItems; i++)
+		{
+			grid_colors.push(0.5,0.5,0.5,0.5);
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_colors), gl.STATIC_DRAW);
+		gridColorBuffer.itemSize = 4;
+		gridColorBuffer.numItems = gridVertexBuffer.numItems;
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// terrain 외곽선 그리기
-	var outline_point = [0			,0			,0,
-						obj.size_x	,0			,0,
-						obj.size_x	,obj.size_y	,0,
-						0			,obj.size_y	,0,
-						0			,0			,obj.height,
-						obj.size_x	,0			,obj.height,
-						obj.size_x	,obj.size_y	,obj.height,
-						0			,obj.size_y	,obj.height];
 	outlineVertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_point), gl.STATIC_DRAW);
-    outlineVertexBuffer.itemSize = 3;
-    outlineVertexBuffer.numItems = outline_point.length/3;
-	
-	var outline_colors = [];
-    for(var i = 0; i < outlineVertexBuffer.numItems; i++)
-    {
-		outline_colors.push(1.0,1.0,1.0,1.0);
-    }
-    outlineColorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_colors), gl.STATIC_DRAW);
-    outlineColorBuffer.itemSize = 4;
-    outlineColorBuffer.numItems = outlineVertexBuffer.numItems;
-	
-    var outlineindices = [0, 1, 1, 2, 2, 3, 3, 0,	// bottom face
-						4, 5, 5, 6, 6, 7, 7, 4,		// top face
-						0, 4, 1, 5, 2, 6, 3, 7];	// pillar
+	outlineColorBuffer = gl.createBuffer();
 	outlineIndexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(outlineindices), gl.STATIC_DRAW);
-    outlineIndexBuffer.itemSize = 1;
-    outlineIndexBuffer.numItems = outlineindices.length;
+	if(obj.outline_visible == "visible")
+	{
+		var outline_point = [0			,0			,0,
+							obj.size_x	,0			,0,
+							obj.size_x	,obj.size_y	,0,
+							0			,obj.size_y	,0,
+							0			,0			,obj.height,
+							obj.size_x	,0			,obj.height,
+							obj.size_x	,obj.size_y	,obj.height,
+							0			,obj.size_y	,obj.height];
+		gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_point), gl.STATIC_DRAW);
+		outlineVertexBuffer.itemSize = 3;
+		outlineVertexBuffer.numItems = outline_point.length/3;
+		
+		var outline_colors = [];
+		for(var i = 0; i < outlineVertexBuffer.numItems; i++)
+		{
+			outline_colors.push(1.0,1.0,1.0,1.0);
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_colors), gl.STATIC_DRAW);
+		outlineColorBuffer.itemSize = 4;
+		outlineColorBuffer.numItems = outlineVertexBuffer.numItems;
+		
+		var outlineindices = [0, 1, 1, 2, 2, 3, 3, 0,	// bottom face
+							4, 5, 5, 6, 6, 7, 7, 4,		// top face
+							0, 4, 1, 5, 2, 6, 3, 7];	// pillar
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(outlineindices), gl.STATIC_DRAW);
+		outlineIndexBuffer.itemSize = 1;
+		outlineIndexBuffer.numItems = outlineindices.length;
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// terrain x, y, z축 라벨 그리기
 	var x_y_label_pos = [];
 	var z_label_pos = [];
-	
-	for(var i = 0; i < obj.subdivision_x; i++)
+	if(obj.xyaxis_visible == "visible")
 	{
-		x_y_label_pos.push([size.x * i, 0, 0]);
+		for(var i = 0; i < obj.subdivision_x; i++)
+		{
+			x_y_label_pos.push([size.x * i, 0, 0]);
+		}
+		for(var i = 0; i < obj.subdivision_y; i++)
+		{
+			x_y_label_pos.push([0, size.y * i, 0]);
+		}
 	}
-	for(var i = 0; i < obj.subdivision_y; i++)
+	if(obj.zaxis_visible == "visible")
 	{
-		x_y_label_pos.push([0, size.y * i, 0]);
-	}
-	for(var i = 0; i <= 5; i++)
-	{
-		z_label_pos.push([0			, 0			, size.z * i],
-						 [obj.size_x, 0			, size.z * i],
-						 [0			, obj.size_y, size.z * i],
-						 [obj.size_x, obj.size_y, size.z * i]);
+		for(var i = 0; i <= 5; i++)
+		{
+			z_label_pos.push([0			, 0			, size.z * i],
+							 [obj.size_x, 0			, size.z * i],
+							 [0			, obj.size_y, size.z * i],
+							 [obj.size_x, obj.size_y, size.z * i]);
+		}
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	    
@@ -1138,7 +1149,7 @@ function DrawTerrain(obj)
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// terrain 그리드 그리기
 	//vertex버퍼 바인드
-	if(obj.grid_visible == true)
+	if(obj.grid_visible == "visible")
 	{
 		gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
 		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, gridVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -1153,7 +1164,7 @@ function DrawTerrain(obj)
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// terrain 외곽선 그리기
     //vertex버퍼 바인드
-	if(obj.outline_visible == true)
+	if(obj.outline_visible == "visible")
 	{
 		gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
 		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, outlineVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -1170,90 +1181,101 @@ function DrawTerrain(obj)
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// terrain 라벨 그리기
 	// 기존에 쓰던 어트리뷰트 비활성화
-	mvPushMatrix();
-	gl.disableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-	gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
-	// 텍스쳐용 셰이더 사용
-	gl.useProgram(texture_shaderProgram);
-	// 텍스쳐용 어트리뷰트 포인터 활성화
-    texture_shaderProgram.vertexPositionAttribute = gl.getAttribLocation(texture_shaderProgram, "aVertexPosition");
-    gl.enableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
-    texture_shaderProgram.vertexColorAttribute = gl.getAttribLocation(texture_shaderProgram, "atexcoord");
-    gl.enableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
-	// 텍스쳐용 유니폼 포인터 지정
-    texture_shaderProgram.pMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uPMatrix");
-    texture_shaderProgram.mvMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uMVMatrix");
-    texture_shaderProgram.uSampler = gl.getUniformLocation(texture_shaderProgram, "uSampler");
-	//gl.enable(gl.BLEND);
-    //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.depthMask(false);
-	for(var i = 0; i < obj.subdivision_x; i++)
+	if(obj.xyaxis_visible == "visible" || obj.zaxis_visible == "visible")
 	{
-		DrawText("("+i+", 0)", x_y_label_pos[i],obj);
-	}
-	for(var i = obj.subdivision_x; i < (obj.subdivision_x + obj.subdivision_y); i++)
-	{
-		DrawText("(0, "+(i-obj.subdivision_x)+")", x_y_label_pos[i],obj);
-	}
-	for(var i = 0; i < z_label_pos.length; i++)
-	{
-		var zlabel;
-		switch(i)
+		mvPushMatrix();
+		gl.disableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+		gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
+		// 텍스쳐용 셰이더 사용
+		gl.useProgram(texture_shaderProgram);
+		// 텍스쳐용 어트리뷰트 포인터 활성화
+		texture_shaderProgram.vertexPositionAttribute = gl.getAttribLocation(texture_shaderProgram, "aVertexPosition");
+		gl.enableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
+		texture_shaderProgram.vertexColorAttribute = gl.getAttribLocation(texture_shaderProgram, "atexcoord");
+		gl.enableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
+		// 텍스쳐용 유니폼 포인터 지정
+		texture_shaderProgram.pMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uPMatrix");
+		texture_shaderProgram.mvMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uMVMatrix");
+		texture_shaderProgram.uSampler = gl.getUniformLocation(texture_shaderProgram, "uSampler");
+		//gl.enable(gl.BLEND);
+		//gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		gl.depthMask(false);
+		
+		if(obj.xyaxis_visible == "visible")
 		{
-			case 0:
-			case 1:
-			case 2:
-			case 3:
-				zlabel = 0;
-				break;
-			case 4:
-			case 5:
-			case 6:
-			case 7:
-				zlabel = 20;
-				break;
-			case 8:
-			case 9:
-			case 10:
-			case 11:
-				zlabel = 40;
-				break;
-			case 12:
-			case 13:
-			case 14:
-			case 15:
-				zlabel = 60
-				break;
-			case 16:
-			case 17:
-			case 18:
-			case 19:
-				zlabel = 80;
-				break;
-			case 20:
-			case 21:
-			case 22:
-			case 23:
-				zlabel = 100;
-				break;
-			default:
-				break;
+			for(var i = 0; i < obj.subdivision_x; i++)
+			{
+				DrawText("("+i+", 0)", x_y_label_pos[i],obj);
+			}
+			for(var i = obj.subdivision_x; i < (obj.subdivision_x + obj.subdivision_y); i++)
+			{
+				DrawText("(0, "+(i-obj.subdivision_x)+")", x_y_label_pos[i],obj);
+			}
 		}
-		DrawText(zlabel, z_label_pos[i],obj);
+		
+		if(obj.zaxis_visible == "visible")
+		{
+			for(var i = 0; i < z_label_pos.length; i++)
+			{
+				var zlabel;
+				switch(i)
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						zlabel = 0;
+						break;
+					case 4:
+					case 5:
+					case 6:
+					case 7:
+						zlabel = 20;
+						break;
+					case 8:
+					case 9:
+					case 10:
+					case 11:
+						zlabel = 40;
+						break;
+					case 12:
+					case 13:
+					case 14:
+					case 15:
+						zlabel = 60
+						break;
+					case 16:
+					case 17:
+					case 18:
+					case 19:
+						zlabel = 80;
+						break;
+					case 20:
+					case 21:
+					case 22:
+					case 23:
+						zlabel = 100;
+						break;
+					default:
+						break;
+				}
+				DrawText(zlabel, z_label_pos[i],obj);
+			}
+		}
+		// 텍스쳐용 어트리뷰트 비활성화
+		gl.disableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
+		gl.disableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
+		// 기본 셰이더 사용
+		gl.useProgram(shaderProgram);
+		// 기본 셰이더 어트리뷰트 활성화
+		gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+		gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+		mvPopMatrix();
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		//gl.enable(gl.DEPTH_TEST);
+		//gl.disable(gl.BLEND);
+		gl.depthMask(true);
 	}
-	// 텍스쳐용 어트리뷰트 비활성화
-	gl.disableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
-	gl.disableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
-	// 기본 셰이더 사용
-	gl.useProgram(shaderProgram);
-	// 기본 셰이더 어트리뷰트 활성화
-    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-    gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
-	mvPopMatrix();
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-	//gl.enable(gl.DEPTH_TEST);
-	//gl.disable(gl.BLEND);
-	gl.depthMask(true);
 	mvPopMatrix();
 }
 
@@ -1342,102 +1364,114 @@ function Draw3DContour(obj)
 	size.x = obj.size_x/(obj.subdivision_x-1);
 	size.y = obj.size_y/(obj.subdivision_y-1);
 	size.z = obj.height/(obj.subdivision_z-1);
-	var grid_point = [];
-	for(var i = 0; i < obj.subdivision_z; i++)
-	{
-		for(var k = 0; k < obj.subdivision_x; k++)
-		{
-			grid_point.push(size.x * k	,0			,size.z * i);
-			grid_point.push(size.x * k	,obj.height	,size.z * i);
-		}
-		for(var j = 0; j < obj.subdivision_y; j++)
-		{
-			grid_point.push(0			,size.y * j	,size.z * i);
-			grid_point.push(obj.size_x	,size.y * j	,size.z * i);
-		}
-	}
-	for(var i = 0; i < obj.subdivision_x; i++)
-	{
-		for(var j = 0; j < obj.subdivision_y; j++)
-		{
-			grid_point.push(size.x * i	,size.y * j	,0);
-			grid_point.push(size.x * i	,size.y * j	,obj.height);
-		}
-	}
 	gridVertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_point), gl.STATIC_DRAW);
-    gridVertexBuffer.itemSize = 3;
-    gridVertexBuffer.numItems = grid_point.length/3;
-	
-	var grid_colors = [];
-    for(var i = 0; i < gridVertexBuffer.numItems; i++)
-    {
-		grid_colors.push(0.5,0.5,0.5,0.5);
-    }
     gridColorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_colors), gl.STATIC_DRAW);
-    gridColorBuffer.itemSize = 4;
-    gridColorBuffer.numItems = gridVertexBuffer.numItems;
+	if(obj.grid_visible == "visible")
+	{
+		var grid_point = [];
+		for(var i = 0; i < obj.subdivision_z; i++)
+		{
+			for(var k = 0; k < obj.subdivision_x; k++)
+			{
+				grid_point.push(size.x * k	,0			,size.z * i);
+				grid_point.push(size.x * k	,obj.height	,size.z * i);
+			}
+			for(var j = 0; j < obj.subdivision_y; j++)
+			{
+				grid_point.push(0			,size.y * j	,size.z * i);
+				grid_point.push(obj.size_x	,size.y * j	,size.z * i);
+			}
+		}
+		for(var i = 0; i < obj.subdivision_x; i++)
+		{
+			for(var j = 0; j < obj.subdivision_y; j++)
+			{
+				grid_point.push(size.x * i	,size.y * j	,0);
+				grid_point.push(size.x * i	,size.y * j	,obj.height);
+			}
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_point), gl.STATIC_DRAW);
+		gridVertexBuffer.itemSize = 3;
+		gridVertexBuffer.numItems = grid_point.length/3;
+		
+		var grid_colors = [];
+		for(var i = 0; i < gridVertexBuffer.numItems; i++)
+		{
+			grid_colors.push(0.5,0.5,0.5,0.5);
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(grid_colors), gl.STATIC_DRAW);
+		gridColorBuffer.itemSize = 4;
+		gridColorBuffer.numItems = gridVertexBuffer.numItems;
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// contour 외곽선 그리기
-	var outline_point = [0			,0			,0,
-						obj.size_x	,0			,0,
-						obj.size_x	,obj.size_y	,0,
-						0			,obj.size_y	,0,
-						0			,0			,obj.height,
-						obj.size_x	,0			,obj.height,
-						obj.size_x	,obj.size_y	,obj.height,
-						0			,obj.size_y	,obj.height];
 	outlineVertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_point), gl.STATIC_DRAW);
-    outlineVertexBuffer.itemSize = 3;
-    outlineVertexBuffer.numItems = outline_point.length/3;
-	
-	var outline_colors = [];
-    for(var i = 0; i < outlineVertexBuffer.numItems; i++)
-    {
-		outline_colors.push(1.0,1.0,1.0,1.0);
-    }
     outlineColorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_colors), gl.STATIC_DRAW);
-    outlineColorBuffer.itemSize = 4;
-    outlineColorBuffer.numItems = outlineVertexBuffer.numItems;
-	
-    var outlineindices = [0, 1, 1, 2, 2, 3, 3, 0,	// bottom face
-						4, 5, 5, 6, 6, 7, 7, 4,		// top face
-						0, 4, 1, 5, 2, 6, 3, 7];	// pillar
 	outlineIndexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(outlineindices), gl.STATIC_DRAW);
-    outlineIndexBuffer.itemSize = 1;
-    outlineIndexBuffer.numItems = outlineindices.length;
+	if(obj.outline_visible == "visible")
+	{
+		var outline_point = [0			,0			,0,
+							obj.size_x	,0			,0,
+							obj.size_x	,obj.size_y	,0,
+							0			,obj.size_y	,0,
+							0			,0			,obj.height,
+							obj.size_x	,0			,obj.height,
+							obj.size_x	,obj.size_y	,obj.height,
+							0			,obj.size_y	,obj.height];
+		gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_point), gl.STATIC_DRAW);
+		outlineVertexBuffer.itemSize = 3;
+		outlineVertexBuffer.numItems = outline_point.length/3;
+		
+		var outline_colors = [];
+		for(var i = 0; i < outlineVertexBuffer.numItems; i++)
+		{
+			outline_colors.push(1.0,1.0,1.0,1.0);
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(outline_colors), gl.STATIC_DRAW);
+		outlineColorBuffer.itemSize = 4;
+		outlineColorBuffer.numItems = outlineVertexBuffer.numItems;
+		
+		var outlineindices = [0, 1, 1, 2, 2, 3, 3, 0,	// bottom face
+							4, 5, 5, 6, 6, 7, 7, 4,		// top face
+							0, 4, 1, 5, 2, 6, 3, 7];	// pillar
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(outlineindices), gl.STATIC_DRAW);
+		outlineIndexBuffer.itemSize = 1;
+		outlineIndexBuffer.numItems = outlineindices.length;
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// contour x, y, z축 라벨 그리기
 	var x_y_label_pos = [];
 	var z_label_pos = [];
-	var z_label_interval = obj.height/5;
-	for(var i = 0; i < obj.subdivision_x; i++)
+	if(obj.xyaxis_visible == "visible")
 	{
-		x_y_label_pos.push([size.x * i, 0, 0]);
+		for(var i = 0; i < obj.subdivision_x; i++)
+		{
+			x_y_label_pos.push([size.x * i, 0, 0]);
+		}
+		for(var i = 0; i < obj.subdivision_y; i++)
+		{
+			x_y_label_pos.push([0, size.y * i, 0]);
+		}
 	}
-	for(var i = 0; i < obj.subdivision_y; i++)
+	if(obj.zaxis_visible == "visible")
 	{
-		x_y_label_pos.push([0, size.y * i, 0]);
-	}
-	for(var i = 0; i <= 5; i++)
-	{
-		z_label_pos.push([0			, 0			, z_label_interval * i],
-						 [obj.size_x, 0			, z_label_interval * i],
-						 [0			, obj.size_y, z_label_interval * i],
-						 [obj.size_x, obj.size_y, z_label_interval * i]);
+		var z_label_interval = obj.height/5;
+		for(var i = 0; i <= 5; i++)
+		{
+			z_label_pos.push([0			, 0			, z_label_interval * i],
+							 [obj.size_x, 0			, z_label_interval * i],
+							 [0			, obj.size_y, z_label_interval * i],
+							 [obj.size_x, obj.size_y, z_label_interval * i]);
+		}
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -1473,116 +1507,132 @@ function Draw3DContour(obj)
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// contour 그리드 그리기
 	//vertex버퍼 바인드
-    gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, gridVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    //색상 vertex버퍼 바인드
-    gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, gridColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    setMatrixUniforms();
-    gl.drawArrays(gl.LINES, 0, gridVertexBuffer.numItems);
+	if(obj.grid_visible == "visible")
+	{
+		gl.bindBuffer(gl.ARRAY_BUFFER, gridVertexBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, gridVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		//색상 vertex버퍼 바인드
+		gl.bindBuffer(gl.ARRAY_BUFFER, gridColorBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, gridColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		setMatrixUniforms();
+		gl.drawArrays(gl.LINES, 0, gridVertexBuffer.numItems);
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// contour 외곽선 그리기
     //vertex버퍼 바인드
-    gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, outlineVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    //색상 vertex버퍼 바인드
-    gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
-    gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, outlineColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
-    //인덱스 버퍼 바인드
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
-    setMatrixUniforms();
-    gl.drawElements(gl.LINES, outlineIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	if(obj.outline_visible == "visible")
+	{
+		gl.bindBuffer(gl.ARRAY_BUFFER, outlineVertexBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, outlineVertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		//색상 vertex버퍼 바인드
+		gl.bindBuffer(gl.ARRAY_BUFFER, outlineColorBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, outlineColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		//인덱스 버퍼 바인드
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, outlineIndexBuffer);
+		setMatrixUniforms();
+		gl.drawElements(gl.LINES, outlineIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// contour 라벨 그리기
 	// 기존에 쓰던 어트리뷰트 비활성화
-	mvPushMatrix();
-	gl.disableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-	gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
-	// 텍스쳐용 셰이더 사용
-	gl.useProgram(texture_shaderProgram);
-	// 텍스쳐용 어트리뷰트 포인터 활성화
-    texture_shaderProgram.vertexPositionAttribute = gl.getAttribLocation(texture_shaderProgram, "aVertexPosition");
-    gl.enableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
-    texture_shaderProgram.vertexColorAttribute = gl.getAttribLocation(texture_shaderProgram, "atexcoord");
-    gl.enableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
-	// 텍스쳐용 유니폼 포인터 지정
-    texture_shaderProgram.pMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uPMatrix");
-    texture_shaderProgram.mvMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uMVMatrix");
-    texture_shaderProgram.uSampler = gl.getUniformLocation(texture_shaderProgram, "uSampler");
-	//gl.enable(gl.BLEND);
-    //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.depthMask(false);
-	for(var i = 0; i < obj.subdivision_x; i++)
+	
+	if(obj.xyaxis_visible == "visible" || obj.zaxis_visible == "visible")
 	{
-		DrawText("("+i+", 0)", x_y_label_pos[i],obj);
-	}
-	for(var i = obj.subdivision_x; i < (obj.subdivision_x + obj.subdivision_y); i++)
-	{
-		DrawText("(0, "+(i-obj.subdivision_x)+")", x_y_label_pos[i],obj);
-	}
-	for(var i = 0; i < z_label_pos.length; i++)
-	{
-		var zlabel;
-		switch(i)
+		mvPushMatrix();
+		gl.disableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+		gl.disableVertexAttribArray(shaderProgram.vertexColorAttribute);
+		// 텍스쳐용 셰이더 사용
+		gl.useProgram(texture_shaderProgram);
+		// 텍스쳐용 어트리뷰트 포인터 활성화
+		texture_shaderProgram.vertexPositionAttribute = gl.getAttribLocation(texture_shaderProgram, "aVertexPosition");
+		gl.enableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
+		texture_shaderProgram.vertexColorAttribute = gl.getAttribLocation(texture_shaderProgram, "atexcoord");
+		gl.enableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
+		// 텍스쳐용 유니폼 포인터 지정
+		texture_shaderProgram.pMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uPMatrix");
+		texture_shaderProgram.mvMatrixUniform = gl.getUniformLocation(texture_shaderProgram, "uMVMatrix");
+		texture_shaderProgram.uSampler = gl.getUniformLocation(texture_shaderProgram, "uSampler");
+		//gl.enable(gl.BLEND);
+		//gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		gl.depthMask(false);
+		if(obj.xyaxis_visible == "visible")
 		{
-			case 0:
-			case 1:
-			case 2:
-			case 3:
-				zlabel = 0;
-				break;
-			case 4:
-			case 5:
-			case 6:
-			case 7:
-				zlabel = 20;
-				break;
-			case 8:
-			case 9:
-			case 10:
-			case 11:
-				zlabel = 40;
-				break;
-			case 12:
-			case 13:
-			case 14:
-			case 15:
-				zlabel = 60
-				break;
-			case 16:
-			case 17:
-			case 18:
-			case 19:
-				zlabel = 80;
-				break;
-			case 20:
-			case 21:
-			case 22:
-			case 23:
-				zlabel = 100;
-				break;
-			default:
-				break;
+			for(var i = 0; i < obj.subdivision_x; i++)
+			{
+				DrawText("("+i+", 0)", x_y_label_pos[i],obj);
+			}
+			for(var i = obj.subdivision_x; i < (obj.subdivision_x + obj.subdivision_y); i++)
+			{
+				DrawText("(0, "+(i-obj.subdivision_x)+")", x_y_label_pos[i],obj);
+			}
 		}
-		DrawText(zlabel, z_label_pos[i],obj);
+		if(obj.zaxis_visible == "visible")
+		{
+			for(var i = 0; i < z_label_pos.length; i++)
+			{
+				var zlabel;
+				switch(i)
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						zlabel = 0;
+						break;
+					case 4:
+					case 5:
+					case 6:
+					case 7:
+						zlabel = 20;
+						break;
+					case 8:
+					case 9:
+					case 10:
+					case 11:
+						zlabel = 40;
+						break;
+					case 12:
+					case 13:
+					case 14:
+					case 15:
+						zlabel = 60
+						break;
+					case 16:
+					case 17:
+					case 18:
+					case 19:
+						zlabel = 80;
+						break;
+					case 20:
+					case 21:
+					case 22:
+					case 23:
+						zlabel = 100;
+						break;
+					default:
+						break;
+				}
+				DrawText(zlabel, z_label_pos[i],obj);
+			}
+		}
+		// 텍스쳐용 어트리뷰트 비활성화
+		gl.disableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
+		gl.disableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
+		// 기본 셰이더 사용
+		gl.useProgram(shaderProgram);
+		// 기본 셰이더 어트리뷰트 활성화
+		gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+		gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+		mvPopMatrix();
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		//gl.enable(gl.DEPTH_TEST);
+		//gl.disable(gl.BLEND);
+		gl.depthMask(true);
 	}
-	// 텍스쳐용 어트리뷰트 비활성화
-	gl.disableVertexAttribArray(texture_shaderProgram.vertexPositionAttribute);
-	gl.disableVertexAttribArray(texture_shaderProgram.vertexColorAttribute);
-	// 기본 셰이더 사용
-	gl.useProgram(shaderProgram);
-	// 기본 셰이더 어트리뷰트 활성화
-    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-    gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
-	mvPopMatrix();
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-	//gl.enable(gl.DEPTH_TEST);
-	//gl.disable(gl.BLEND);
-	gl.depthMask(true);
     mvPopMatrix();
 }
 

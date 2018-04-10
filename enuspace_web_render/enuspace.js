@@ -14,27 +14,15 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 function ChangePicture(position, page)
 {
-    //enuspace에 폴더 추가기능 생기기전까지 임시로직
-    var sendpagename;
-    if(String(page) == undefined)
-    {
-        console.log("invaild pagename or undefined pagename");
-        return;
-    }
-    var strtemp = String(page).split('\\');
-    if(strtemp.length > 0)
-    {
-        sendpagename = strtemp[strtemp.length - 1];
-    }
-   GridentList =[];
-   
-   if($('#imageLists').length > 0)
-   {
-      $('#imageLists').empty();
-   }
-   ///
-   
-    requestpage(sendpagename);
+	//enuspace에 폴더 추가기능 생기기전까지 임시로직
+	if(page == undefined)
+	{
+		console.log("invaild pagename or undefined pagename");
+		return;
+	}
+	var sendpagename = page.replace("picture","web");
+	
+	requestpage(sendpagename);
 }
 //12.14 LWH
 function getPictureValue(page)
@@ -377,7 +365,7 @@ function requestpage(pagename)
             {
                 if(window[root_obj_id].main_taskview != undefined)
                 {
-                    interval_id = setInterval("window[root_obj_id].main_taskview()", 50);
+                    interval_id = setInterval("window[root_obj_id].main_taskview()", 100);
                 }
             }
         }
@@ -388,7 +376,7 @@ function requestpage(pagename)
         {
             if(x3dSceneobj.main_taskview != undefined)
             {
-                interval_id = setInterval("x3dSceneobj.main_taskview()", 50);
+                interval_id = setInterval("x3dSceneobj.main_taskview()", 100);
             }
         }
     }
