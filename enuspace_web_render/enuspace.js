@@ -12,18 +12,6 @@
 // 2017.03.31 그라데이션 추가 chs
 // 
 ///////////////////////////////////////////////////////////////////////////////////////
-function ChangePicture(position, page)
-{
-	//enuspace에 폴더 추가기능 생기기전까지 임시로직
-	if(page == undefined)
-	{
-		console.log("invaild pagename or undefined pagename");
-		return;
-	}
-	var sendpagename = page.replace("picture","web");
-	
-	requestpage(sendpagename);
-}
 //12.14 LWH
 function getPictureValue(page)
 {
