@@ -4018,7 +4018,7 @@ function Create3DContourObj(nodeobj)
         var str_hidden_points_split;
 		if(nodeobj.getAttribute("hidden_points") == null)
 		{
-			return;
+			return [];
 		}
 		str_hidden_points_split = nodeobj.getAttribute("hidden_points").split(" ");
         for(var i = 0; i < str_hidden_points_split.length; i++)
