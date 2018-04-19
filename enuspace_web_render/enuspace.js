@@ -3988,9 +3988,7 @@ function Create3DContourObj(nodeobj)
     this.subdivision_x = parseFloat(splittext[0]);
     this.subdivision_y = parseFloat(splittext[1]);
     this.subdivision_z = parseFloat(splittext[2]);
-    
-    this.hidden_points = nodeobj.getAttribute("hidden_points");
-    
+	
     this.minElevation = parseFloat(nodeobj.getAttribute("minElevation"));
     this.maxElevation = parseFloat(nodeobj.getAttribute("maxElevation"));
     this.colorElevation = nodeobj.getAttribute("colorElevation");
@@ -4017,7 +4015,12 @@ function Create3DContourObj(nodeobj)
             }
         }
         
-        var str_hidden_points_split = nodeobj.getAttribute("hidden_points").split(" ");
+        var str_hidden_points_split;
+		if(nodeobj.getAttribute("hidden_points") == null)
+		{
+			return;
+		}
+		str_hidden_points_split = nodeobj.getAttribute("hidden_points").split(" ");
         for(var i = 0; i < str_hidden_points_split.length; i++)
         {
             var str_points_split = str_hidden_points_split[i].split(",");
