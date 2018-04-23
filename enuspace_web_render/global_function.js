@@ -495,3 +495,140 @@ function memcpy()
 {
     console.log("memcpy function is not working in client");
 }
+function make3dobjstructure(objnode)
+{
+	var Appearance_node = document.createElement("Appearance");
+	var Material_node = document.createElement("Material");
+	var Shape_node = document.createElement("Shape");
+	var Transform_node = document.createElement("Transform");
+	Transform_node.setAttribute("rotation","0.000000,0.000000,0.000000");
+	Transform_node.setAttribute("scaleOrientation","0.000000,0.000000,1.000000,0.000000");
+	Transform_node.setAttribute("translation",objnode.getAttribute("trans"));
+	Material_node.setAttribute("ambientIntensity","0.200000");
+	Material_node.setAttribute("shininess","0.200000");
+	Material_node.setAttribute("transparency","1.000000");
+	Material_node.setAttribute("diffuseColor","0.800000,0.800000,0.800000");
+	Material_node.setAttribute("emissiveColor","0.000000,0.000000,0.000000");
+	Material_node.setAttribute("specularColor","0.000000,0.000000,0.000000");
+	Shape_node.setAttribute("id",objnode.getAttribute("id"));
+	Appearance_node.appendChild(Material_node);
+	Shape_node.appendChild(Appearance_node);
+	Shape_node.appendChild(objnode);
+	Transform_node.appendChild(Shape_node);
+	return objnode;
+}
+function Create3DBox(strID, size, transx, transy, transz)
+{
+    var cre_node = document.createElement("Box");
+	cre_node.setAttribute("size",size+","+size+","+size);
+	cre_node.setAttribute("trans",transx+","+transy+","+transz);
+	cre_node.setAttribute("id",strID);
+	cre_node = make3dobjstructure(cre_node);
+    window[strID] = new Create3DBoxObj(cre_node);
+    window[strID].parentObj = x3dSceneobj;
+    window[strID].prevSibling = x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1];
+    x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1].nextSibling = window[strID];
+    x3dSceneobj.appendChild(window[strID]);
+}
+function Create3DCone(strID, bottomradius, height, slices, transx, transy, transz)
+{
+    var cre_node = document.createElement("Cone");
+	cre_node.setAttribute("bottom","true");
+	cre_node.setAttribute("bottomRadius",bottomradius);
+	cre_node.setAttribute("height",height);
+	cre_node.setAttribute("subdivision",slices);
+	cre_node.setAttribute("top","true");
+	cre_node.setAttribute("topRadius","true");
+	cre_node.setAttribute("bottom","0.000000");
+	cre_node.setAttribute("trans",transx+","+transy+","+transz);
+	cre_node.setAttribute("id",strID);
+	cre_node = make3dobjstructure(cre_node);
+    window[strID] = new Create3DConeObj(cre_node);
+    window[strID].parentObj = x3dSceneobj;
+    window[strID].prevSibling = x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1];
+    x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1].nextSibling = window[strID];
+    x3dSceneobj.appendChild(window[strID]);
+}
+function Create3DCylinder(strID, height, radius, slices, transx, transy, transz)
+{
+	var cre_node = document.createElement("Cylinder");
+	cre_node.setAttribute("bottom","true");
+	cre_node.setAttribute("height",height);
+	cre_node.setAttribute("radius",radius);
+	cre_node.setAttribute("side","true");
+	cre_node.setAttribute("subdivision",slices);
+	cre_node.setAttribute("top","true");
+	cre_node.setAttribute("trans",transx+","+transy+","+transz);
+	cre_node.setAttribute("id",strID);
+	cre_node = make3dobjstructure(cre_node);
+    window[strID] = new Create3DCylinderObj(cre_node);
+    window[strID].parentObj = x3dSceneobj;
+    window[strID].prevSibling = x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1];
+    x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1].nextSibling = window[strID];
+    x3dSceneobj.appendChild(window[strID]);
+}
+function Create3DFaceSet(strID, points, coordIndex, transx, transy, transz)
+{
+	var cre_node = document.createElement("FaceSet");
+	cre_node.setAttribute("bottom","true");
+	cre_node.setAttribute("bottomRadius",bottomradius);
+	cre_node.setAttribute("height",height);
+	cre_node.setAttribute("subdivision","24.000000");
+	cre_node.setAttribute("top","true");
+	cre_node.setAttribute("topRadius","true");
+	cre_node.setAttribute("bottom","0.000000");
+	cre_node.setAttribute("trans",transx+","+transy+","+transz);
+	cre_node.setAttribute("id",strID);
+	cre_node = make3dobjstructure(cre_node);
+    window[strID] = new Create3DCylinderObj(cre_node);
+    window[strID].parentObj = x3dSceneobj;
+    window[strID].prevSibling = x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1];
+    x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1].nextSibling = window[strID];
+    x3dSceneobj.appendChild(window[strID]);
+}
+function Create3DInline(strID, strUrl, transx, transy, transz)
+{
+	
+}
+function Create3DLineSet(strID, points, transx, transy, transz)
+{
+	
+}
+function Create3DSphere(strID, radius, slices, transx, transy, transz)
+{
+	var cre_node = document.createElement("Sphere");
+	cre_node.setAttribute("radius",radius);
+	cre_node.setAttribute("subdivision",slices);
+	cre_node.setAttribute("trans",transx+","+transy+","+transz);
+	cre_node.setAttribute("id",strID);
+	cre_node = make3dobjstructure(cre_node);
+    window[strID] = new Create3DSphereObj(cre_node);
+    window[strID].parentObj = x3dSceneobj;
+    window[strID].prevSibling = x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1];
+    x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1].nextSibling = window[strID];
+    x3dSceneobj.appendChild(window[strID]);
+}
+function Create3DTerrain(strID, size, subdivision, transx, transy, transz)
+{
+	
+}
+function Create3DText(strID, text, style, fontsize, transx, transy, transz)
+{
+	var font_node = document.createElement("FontStyle");
+	font_node.setAttribute("family","Arial");
+	font_node.setAttribute("size",fontsize);
+	var cre_node = document.createElement("Text");
+	cre_node.setAttribute("string",text);
+	cre_node.setAttribute("trans",transx+","+transy+","+transz);
+	cre_node.setAttribute("id",strID);
+	cre_node = make3dobjstructure(cre_node);
+    window[strID] = new Create3DSphereObj(cre_node);
+    window[strID].parentObj = x3dSceneobj;
+    window[strID].prevSibling = x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1];
+    x3dSceneobj.childNodes[x3dSceneobj.childNodes.length-1].nextSibling = window[strID];
+    x3dSceneobj.appendChild(window[strID]);
+}
+function Create3DContour(strID, transx, transy, transz)
+{
+	
+}
