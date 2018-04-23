@@ -1344,7 +1344,7 @@ function Draw3DContour(obj)
 			for(var k = 0; k < obj.subdivision_x; k++)
 			{
 				grid_point.push(size.x * k	,0			,size.z * i);
-				grid_point.push(size.x * k	,obj.height	,size.z * i);
+				grid_point.push(size.x * k	,obj.size_y	,size.z * i);
 			}
 			for(var j = 0; j < obj.subdivision_y; j++)
 			{
