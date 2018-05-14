@@ -2994,6 +2994,30 @@ function Create3DTextObj(nodeobj)
     this.size = parseFloat(fontstylenode.getAttribute("size"));
     this.style = fontstylenode.getAttribute("style");
     this.justify = fontstylenode.getAttribute("justify");
+	
+	var child = nodeobj.parentElement.firstElementChild;
+    while(child)
+    {
+        if(child.nodeName == "script")
+        {
+            if(current_browser == "ie")
+            {
+                CreateFunction(child.text,this);
+            }
+            else
+            {
+                CreateFunction(child.textContent,this);
+            }
+        }
+        if(child.nextElementSibling)
+        {
+            child = child.nextElementSibling;
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 function Create3DConeObj(nodeobj)
@@ -3125,6 +3149,30 @@ function Create3DConeObj(nodeobj)
     this.subdivision = parseFloat(nodeobj.getAttribute("subdivision"));
     this.top = nodeobj.getAttribute("top");
 	this.topRadius = parseFloat(nodeobj.getAttribute("topRadius"));
+	
+	var child = nodeobj.parentElement.firstElementChild;
+    while(child)
+    {
+        if(child.nodeName == "script")
+        {
+            if(current_browser == "ie")
+            {
+                CreateFunction(child.text,this);
+            }
+            else
+            {
+                CreateFunction(child.textContent,this);
+            }
+        }
+        if(child.nextElementSibling)
+        {
+            child = child.nextElementSibling;
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 function Create3DCylinderObj(nodeobj)
@@ -3256,6 +3304,30 @@ function Create3DCylinderObj(nodeobj)
     this.side = (nodeobj.getAttribute("side"));
     this.subdivision = parseFloat(nodeobj.getAttribute("subdivision"));
     this.top = nodeobj.getAttribute("top");
+	
+	var child = nodeobj.parentElement.firstElementChild;
+    while(child)
+    {
+        if(child.nodeName == "script")
+        {
+            if(current_browser == "ie")
+            {
+                CreateFunction(child.text,this);
+            }
+            else
+            {
+                CreateFunction(child.textContent,this);
+            }
+        }
+        if(child.nextElementSibling)
+        {
+            child = child.nextElementSibling;
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 function Create3DSphereObj(nodeobj)
@@ -3385,6 +3457,30 @@ function Create3DSphereObj(nodeobj)
     splittext = nodeobj.getAttribute("subdivision").split(",");
     this.subdivision_v = parseFloat(splittext[0]);
     this.subdivision_h = parseFloat(splittext[1]);
+	
+	var child = nodeobj.parentElement.firstElementChild;
+    while(child)
+    {
+        if(child.nodeName == "script")
+        {
+            if(current_browser == "ie")
+            {
+                CreateFunction(child.text,this);
+            }
+            else
+            {
+                CreateFunction(child.textContent,this);
+            }
+        }
+        if(child.nextElementSibling)
+        {
+            child = child.nextElementSibling;
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 function Create3DLineSetObj(nodeobj)
@@ -3512,6 +3608,30 @@ function Create3DLineSetObj(nodeobj)
     
     var coordinateobj = nodeobj.firstElementChild;
     this.point = coordinateobj.getAttribute("point").split(" ");
+	
+	var child = nodeobj.parentElement.firstElementChild;
+    while(child)
+    {
+        if(child.nodeName == "script")
+        {
+            if(current_browser == "ie")
+            {
+                CreateFunction(child.text,this);
+            }
+            else
+            {
+                CreateFunction(child.textContent,this);
+            }
+        }
+        if(child.nextElementSibling)
+        {
+            child = child.nextElementSibling;
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 function Create3DIndexedFaceSetObj(nodeobj)
